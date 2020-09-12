@@ -25,26 +25,15 @@ func TestEvolve(t *testing.T) {
 	for ; i < 100000; i++ {
 		pop.Evolve()
 		//	println(string(pop.best(fit).Genome()))
-		if last = string(pop.best().Genome()); last == target {
+		if last = string(pop.Fittest().Genome()); last == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, string(pop.best().Genome()))
+	assert.Equal(t, target, string(pop.Fittest().Genome()))
 }
 
-type text struct {
-	value Genome
-}
-
-func (t *text) Genome() Genome {
-	return t.value
-}
-
-func (t *text) Evolve(v Genome) {
-	t.value = v
-}
-
+// fitnessFor returns a fitness function for a string
 func fitnessFor(text string) Fitness {
 	target := []byte(text)
 	return func(v Evolver) float32 {
@@ -56,4 +45,24 @@ func fitnessFor(text string) Fitness {
 		}
 		return score / float32(len(target))
 	}
+}
+
+// Text represents a text with a dna (text itself in this case)
+type text struct {
+	dna Genome
+}
+
+// Genome returns the genome
+func (t *text) Genome() Genome {
+	return t.dna
+}
+
+// Evolve updates the genome
+func (t *text) Evolve(v Genome) {
+	t.dna = v
+}
+
+// String returns a string representation
+func (t *text) String() string {
+	return string(t.dna)
 }

@@ -117,8 +117,11 @@ func (p *Population) evaluate() (max float32) {
 	return
 }
 
-// best returns the best fit
-func (p *Population) best() (best Evolver) {
+// Fittest returns the fittest evolver
+func (p *Population) Fittest() (best Evolver) {
+	p.Lock()
+	defer p.Unlock()
+
 	max := float32(0)
 	for i, v := range p.values {
 		if f := p.fitnessOf[i]; f >= max {

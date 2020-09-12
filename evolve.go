@@ -4,9 +4,13 @@
 package evolve
 
 import (
+	crand "crypto/rand"
 	"math/rand"
 	"sync"
 )
+
+// Genome represents a genome string
+type Genome = []byte
 
 // Fitness represents a fitness function that evaluates a specific entity
 type Fitness = func(Evolver) float32
@@ -134,4 +138,11 @@ func (p *Population) mutate(genes Genome) {
 
 	i := p.rand.Int31n(int32(len(genes)))
 	genes[i] = randByte()
+}
+
+// RandomGenome generates a random genome string
+func randomGenome(length int) Genome {
+	v := make(Genome, length)
+	crand.Read(v)
+	return v
 }

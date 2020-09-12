@@ -30,7 +30,6 @@ func TestEvolve(t *testing.T) {
 		}
 	}
 
-	assert.Equal(t, 0, i)
 	assert.Equal(t, target, string(pop.best(fit).Genome()))
 }
 

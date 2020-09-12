@@ -96,9 +96,10 @@ func (p *Population) Evolve() {
 func (p *Population) pickMate() Evolver {
 	n := len(p.values)
 	max := p.fitnessMax
+	rng := p.rand
 	for {
-		i := rand.Intn(n)
-		if p.rand.Float32()*max < p.fitnessOf[i] {
+		i := rng.Intn(n)
+		if rng.Float32()*max <= p.fitnessOf[i] {
 			return p.values[i]
 		}
 	}
@@ -117,11 +118,10 @@ func (p *Population) evaluate() (max float32) {
 }
 
 // best returns the best fit
-func (p *Population) best(fitnessOf Fitness) (best Evolver) {
+func (p *Population) best() (best Evolver) {
 	max := float32(0)
-	for _, v := range p.values {
-		f := fitnessOf(v)
-		if f > max {
+	for i, v := range p.values {
+		if f := p.fitnessOf[i]; f >= max {
 			best, max = v, f
 		}
 	}

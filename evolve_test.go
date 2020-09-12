@@ -11,7 +11,7 @@ import (
 
 func TestEvolve(t *testing.T) {
 	const target = "This is evolving..."
-	const n = 100
+	const n = 200
 	population := make([]Evolver, 0, n)
 	for i := 0; i < n; i++ {
 		population = append(population, new(text))
@@ -25,12 +25,12 @@ func TestEvolve(t *testing.T) {
 	for ; i < 100000; i++ {
 		pop.Evolve()
 		//	println(string(pop.best(fit).Genome()))
-		if last = string(pop.best(fit).Genome()); last == target {
+		if last = string(pop.best().Genome()); last == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, string(pop.best(fit).Genome()))
+	assert.Equal(t, target, string(pop.best().Genome()))
 }
 
 type text struct {

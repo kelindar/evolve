@@ -59,16 +59,16 @@ func main() {
 	const target = "Hello World"
 	const n = 200
 
-    // Create a fitness function
+	// Create a fitness function
 	fit := fitnessFor(target)
 
-    // Create a population
+	// Create a population
 	population := make([]evolve.Evolver, 0, n)
 	for i := 0; i < n; i++ {
 		population = append(population, new(text))
 	}
     
-    // Create a population
+	// Create a population
 	pop := evolve.New(population, fit, len(target))
 
 	// Evolve over many generations
@@ -76,7 +76,7 @@ func main() {
 		pop.Evolve()
 	}
 
-    // Get the fittest member of the population
+	// Get the fittest member of the population
 	fittest := pop.Fittest()
 }
 ```

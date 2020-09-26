@@ -80,18 +80,18 @@ func (p *Population) Evolve() {
 	p.fitnessMax = p.evaluate()
 	p.pool = (p.pool + 1) % 2
 	buffer := p.pools[p.pool]
-
-	// Perform the selection & crossover
 	for i := range p.values {
+
+		// Select 2 parents
 		p1 := p.pickMate()
 		p2 := p.pickMate()
-		in := buffer[i]
-		in.Crossover(p1.Genome(), p2.Genome())
-	}
 
-	// Mutate the population
-	for _, v := range buffer {
-		v.Mutate()
+		// Perform the crossover
+		gene := buffer[i]
+		gene.Crossover(p1.Genome(), p2.Genome())
+
+		// Mutate the genome
+		gene.Mutate()
 	}
 
 	// Write the genome pool

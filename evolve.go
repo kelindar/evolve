@@ -4,21 +4,26 @@
 package evolve
 
 import (
-	crand "crypto/rand"
 	"math/rand"
 	"sync"
 )
 
-// Genome represents a genome string
-type Genome = []byte
-
 // Fitness represents a fitness function that evaluates a specific entity
 type Fitness = func(Evolver) float32
+
+// Genesis represents a function that creates a new genome
+type Genesis = func() Genome
 
 // Evolver represents an entity that evolves
 type Evolver interface {
 	Genome() Genome // Genome returns the genome
 	Evolve(Genome)  // Evolve updates the genome
+}
+
+// Genome represents a genome contract.
+type Genome interface {
+	Mutate()
+	Crossover(Genome, Genome)
 }
 
 // Population represents a population for evolution
@@ -35,7 +40,7 @@ type Population struct {
 
 // New creates a new population controller. This function takes a population of fixed
 // size, a fitness function and a genome size (also of fixed size).
-func New(population []Evolver, fitness Fitness, genomeSize int) *Population {
+func New(population []Evolver, fitness Fitness, genesis Genesis) *Population {
 	n := len(population) // Size of the population
 	p := &Population{
 		rand:      rand.New(rand.NewSource(1)),
@@ -50,7 +55,7 @@ func New(population []Evolver, fitness Fitness, genomeSize int) *Population {
 	p.pools[1] = make([]Genome, n)
 	for _, pool := range p.pools {
 		for i := 0; i < n; i++ {
-			pool[i] = randomGenome(genomeSize)
+			pool[i] = genesis()
 		}
 	}
 
@@ -80,12 +85,13 @@ func (p *Population) Evolve() {
 	for i := range p.values {
 		p1 := p.pickMate()
 		p2 := p.pickMate()
-		p.crossover(p1, p2, buffer[i])
+		in := buffer[i]
+		in.Crossover(p1.Genome(), p2.Genome())
 	}
 
 	// Mutate the population
 	for _, v := range buffer {
-		p.mutate(v)
+		v.Mutate()
 	}
 
 	// Write the genome pool
@@ -130,22 +136,4 @@ func (p *Population) Fittest() (best Evolver) {
 	}
 
 	return
-}
-
-// mutate mutates a random gene
-func (p *Population) mutate(genes Genome) {
-	const rate = 0.01
-	if p.rand.Float32() >= rate {
-		return
-	}
-
-	i := p.rand.Int31n(int32(len(genes)))
-	genes[i] = randByte()
-}
-
-// RandomGenome generates a random genome string
-func randomGenome(length int) Genome {
-	v := make(Genome, length)
-	crand.Read(v)
-	return v
 }

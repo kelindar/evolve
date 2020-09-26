@@ -1,44 +1,47 @@
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-package evolve
+package evolve_test
 
 import (
 	"testing"
 
+	"github.com/kelindar/evolve"
+	"github.com/kelindar/evolve/binary"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestEvolve(t *testing.T) {
 	const target = "This is evolving..."
 	const n = 200
-	population := make([]Evolver, 0, n)
+	population := make([]evolve.Evolver, 0, n)
 	for i := 0; i < n; i++ {
 		population = append(population, new(text))
 	}
 
 	fit := fitnessFor(target)
-	pop := New(population, fit, len(target))
+	pop := evolve.New(population, fit, binary.Make(len(target)))
 
 	// Evolve
 	i, last := 0, ""
 	for ; i < 100000; i++ {
 		pop.Evolve()
 		//	println(string(pop.best(fit).Genome()))
-		if last = string(pop.Fittest().Genome()); last == target {
+		if last = toString(pop.Fittest().Genome()); last == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, string(pop.Fittest().Genome()))
+	assert.Equal(t, target, toString(pop.Fittest().Genome()))
 }
 
 // fitnessFor returns a fitness function for a string
-func fitnessFor(text string) Fitness {
+func fitnessFor(text string) evolve.Fitness {
 	target := []byte(text)
-	return func(v Evolver) float32 {
+	return func(v evolve.Evolver) float32 {
 		var score float32
-		for i, v := range v.Genome() {
+		genome := v.Genome().(*binary.Genome)
+		for i, v := range *genome {
 			if v == target[i] {
 				score++
 			}
@@ -49,20 +52,19 @@ func fitnessFor(text string) Fitness {
 
 // Text represents a text with a dna (text itself in this case)
 type text struct {
-	dna Genome
+	dna evolve.Genome
 }
 
 // Genome returns the genome
-func (t *text) Genome() Genome {
+func (t *text) Genome() evolve.Genome {
 	return t.dna
 }
 
 // Evolve updates the genome
-func (t *text) Evolve(v Genome) {
+func (t *text) Evolve(v evolve.Genome) {
 	t.dna = v
 }
 
-// String returns a string representation
-func (t *text) String() string {
-	return string(t.dna)
+func toString(v evolve.Genome) string {
+	return string(*v.(*binary.Genome))
 }

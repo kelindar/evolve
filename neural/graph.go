@@ -4,7 +4,6 @@
 package neural
 
 import (
-	"math"
 	"sort"
 	"sync/atomic"
 )
@@ -18,7 +17,7 @@ func next() uint32 {
 
 // ----------------------------------------------------------------------------------
 
-// Node represents a neuron in the network
+// Neuron represents a neuron in the network
 type neuron struct {
 	Serial uint32    // The innovation serial number
 	Conns  []synapse // The incoming connections
@@ -26,39 +25,15 @@ type neuron struct {
 }
 
 // makeNeuron creates a new neuron.
-func makeNode() neuron {
+func makeNeuron() neuron {
 	return neuron{
 		Serial: next(),
 	}
 }
 
-// Value returns the value for the neuron
-func (n *neuron) Value() float64 {
-	if n.value != 0 || len(n.Conns) == 0 {
-		return n.value
-	}
-
-	// Sum of the weighted inputs to the neuron
-	s := 0.0
-	for _, c := range n.Conns {
-		if c.Active {
-			s += c.Weight * c.From.Value()
-		}
-	}
-
-	// Keep the value to avoid recalculating
-	n.value = sigmoid(s)
-	return n.value
-}
-
 // connected checks whether the two neurons are connected or not.
 func (n *neuron) connected(neuron *neuron) bool {
 	return searchNode(n, neuron) || searchNode(neuron, n)
-}
-
-// Sigmod activation function.
-func sigmoid(x float64) float64 {
-	return 1.0 / (1 + math.Exp(-x))
 }
 
 // searchNode searches whether incoming connections of "to" contain a "from" neuron.
@@ -75,46 +50,78 @@ func searchNode(from, to *neuron) bool {
 // Nodes represents a set of neurons
 type neurons []neuron
 
-// makeNodes creates a new neuron array.
-func makeNodes(count int) neurons {
+// makeNeurons creates a new neuron array.
+func makeNeurons(count int) neurons {
 	arr := make(neurons, 0, count)
 	for i := 0; i < count; i++ {
-		arr = append(arr, makeNode())
+		arr = append(arr, makeNeuron())
 	}
 	return arr
+}
+
+// Len returns the number of neurons.
+func (n neurons) Len() int {
+	return len(n)
+}
+
+// Less compares two neurons in the slice.
+func (n neurons) Less(i, j int) bool {
+	return n[i].Serial < n[j].Serial
+}
+
+// Swap swaps two neurons.
+func (n neurons) Swap(i, j int) {
+	n[i], n[j] = n[j], n[i]
+}
+
+// Find searches the neurons for a specific serial. For this to work correctly,
+// the neurons array should be sorted.
+func (n neurons) Find(serial uint32) *neuron {
+	i := sort.Search(len(n), func(i int) bool {
+		return n[i].Serial >= serial
+	})
+	if i < len(n) && n[i].Serial == serial {
+		return &n[i]
+	}
+
+	return nil
 }
 
 // ----------------------------------------------------------------------------------
 
 // Synapse represents a synapse for the NEAT network.
 type synapse struct {
-	Serial   uint32  // The innovation serial number
 	Weight   float64 // The weight of the connection
-	Active   bool    // Whether the connection is enabled or not
 	From, To *neuron // The neurons of the connection
+	Active   bool    // Whether the connection is enabled or not
 }
 
 // ID returns a unique key for the edge.
-func (c *synapse) ID() uint64 {
-	return (uint64(c.To.Serial) << 32) | (uint64(c.From.Serial) & 0xffffffff)
+func (s *synapse) ID() uint64 {
+	return (uint64(s.To.Serial) << 32) | (uint64(s.From.Serial) & 0xffffffff)
+}
+
+// Equal checks whether the connection is equal to another connection
+func (s *synapse) Equal(other *synapse) bool {
+	return s.From == other.From && s.To == other.To
 }
 
 // ----------------------------------------------------------------------------------
 
-// sortedByNode represents a connection list which is sorted by neuron ID
-type sortedByNode []synapse
+// synapses represents a connection list which is sorted by neuron ID
+type synapses []synapse
 
 // Len returns the number of connections.
-func (c sortedByNode) Len() int {
-	return len(c)
+func (s synapses) Len() int {
+	return len(s)
 }
 
 // Less compares two connections in the slice.
-func (c sortedByNode) Less(i, j int) bool {
-	return c[i].ID() < c[j].ID()
+func (s synapses) Less(i, j int) bool {
+	return s[i].ID() < s[j].ID()
 }
 
 // Swap swaps two connections
-func (c sortedByNode) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
+func (s synapses) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }

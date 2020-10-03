@@ -10,7 +10,11 @@ import (
 )
 
 func TestConnected(t *testing.T) {
-	n := makeNodes(2)
+	n := []neuron{
+		makeNeuron(),
+		makeNeuron(),
+	}
+
 	n0, n1 := &n[0], &n[1]
 
 	// Disjoint

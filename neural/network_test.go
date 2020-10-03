@@ -4,46 +4,43 @@
 package neural
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkPredict(b *testing.B) {
-	b.Run("2x2", func(b *testing.B) {
-		nn := make2x2()
-		in := []float64{1, 0}
-		out := []float64{0, 0}
+func TestNew(t *testing.T) {
+	serial = 0
+	create := New(2, 1)
+	nn1 := create().(*Network)
+	nn2 := create().(*Network)
 
-		b.ResetTimer()
-		b.ReportAllocs()
-		for n := 0; n < b.N; n++ {
-			nn.Predict(in, out)
-		}
-	})
+	// Neurons must have ascending serial number
+	assert.Equal(t, uint32(1), nn1.nodes[0].Serial)
+	assert.Equal(t, uint32(2), nn1.input[0].Serial)
+	assert.Equal(t, uint32(3), nn1.input[1].Serial)
+	assert.Equal(t, uint32(4), nn1.output[0].Serial)
 
-}
+	// Must be sorted
+	assert.True(t, sort.IsSorted(nn1.nodes))
 
-func TestPredict(t *testing.T) {
-	nn := make2x2()
-	i0 := &nn.input[0]
-	i1 := &nn.input[1]
-	o0 := &nn.output[0]
-	o1 := &nn.output[1]
+	// Add a connection and clone
+	nn1.connect(&nn1.nodes[1], &nn1.nodes[3], 0.5)
+	nn1.Clone(nn2)
 
-	// must be connected
-	assert.True(t, i0.connected(o0))
-	assert.True(t, i1.connected(o0))
-	assert.True(t, i0.connected(o0))
-	assert.False(t, i1.connected(o1))
+	// Clone must match
+	assert.Exactly(t, nn1.nodes, nn2.nodes)
+	assert.Exactly(t, nn1.conns, nn2.conns)
 
-	r := nn.Predict([]float64{0.5, 1}, nil)
-	assert.Equal(t, []float64{0.5216145455966438, 0.4783854544033563}, r)
+	// Pointers must differ
+	assert.True(t, nn1.conns[0].From != nn2.conns[0].From)
+	assert.True(t, nn1.conns[0].To != nn2.conns[0].To)
 }
 
 // make2x2 creates a 2x2 tiny network
 func make2x2() *Network {
-	nn := New(2, 2)
+	nn := New(2, 2)().(*Network)
 	i0 := &nn.input[0]
 	i1 := &nn.input[1]
 	o0 := &nn.output[0]

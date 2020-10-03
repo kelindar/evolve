@@ -83,8 +83,7 @@ func (p *Population) Evolve() {
 	for i := range p.values {
 
 		// Select 2 parents
-		p1 := p.pickMate()
-		p2 := p.pickMate()
+		p1, p2 := p.pickParents()
 
 		// Perform the crossover
 		gene := buffer[i]
@@ -98,15 +97,27 @@ func (p *Population) Evolve() {
 	p.commit(buffer)
 }
 
+// pickParents selects 2 parents from the population and sorts them by their fitness.
+func (p *Population) pickParents() (Evolver, Evolver) {
+	p1, f1 := p.pickMate()
+	p2, f2 := p.pickMate()
+	if f1 > f2 {
+		return p1, p2
+	}
+
+	return p2, p1
+}
+
 // pickMate selects a parent from the population
-func (p *Population) pickMate() Evolver {
+func (p *Population) pickMate() (Evolver, float32) {
 	n := len(p.values)
 	max := p.fitnessMax
 	rng := p.rand
 	for {
 		i := rng.Intn(n)
-		if rng.Float32()*max <= p.fitnessOf[i] {
-			return p.values[i]
+		f := p.fitnessOf[i]
+		if rng.Float32()*max <= f {
+			return p.values[i], f
 		}
 	}
 }

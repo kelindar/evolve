@@ -4,7 +4,6 @@
 package neural
 
 import (
-	"math"
 	"sort"
 
 	"github.com/kelindar/evolve"
@@ -12,54 +11,74 @@ import (
 
 // Network represents a neural network.
 type Network struct {
-	input  neurons
-	hidden neurons
-	output neurons
-	conns  []synapse
+	input  neurons  // Input neurons and a bias neuron
+	output neurons  // Output neurons
+	hidden neurons  // Hidden neurons
+	nodes  neurons  // Neurons for the network
+	conns  synapses // Synapses, sorted by ID
 }
 
-// New creates a new neural network.
-func New(in, out int) *Network {
+// New creates a function for a random genome string
+func New(in, out int) evolve.Genesis {
+	origin := newNetwork(in, out)
+	return func() evolve.Genome {
+		clone := new(Network)
+		origin.Clone(clone)
+		return clone
+	}
+}
+
+// newNetwork creates a new neural network.
+func newNetwork(in, out int) *Network {
+	nodes := makeNeurons(1 + in + out)
 	nn := &Network{
-		input:  makeNodes(in + 1),
-		output: makeNodes(out),
+		nodes:  nodes,
+		input:  nodes[1 : 1+in],
+		output: nodes[1+in : 1+in+out],
+		hidden: nodes[1+in+out:],
 		conns:  make([]synapse, 0, 256),
 	}
 
-	// Bias neuron
-	nn.input[in].value = 1.0
+	// First is always a bias neuron
+	nn.input[0].value = 1.0
 	return nn
 }
 
-// Predict activates the network
-func (n *Network) Predict(input, output []float64) []float64 {
-	if output == nil {
-		output = make([]float64, len(n.output))
+// Clone clones the neural network by copying all of the neurons and synapses and
+// re-assigning the synapse pointers accordingly.
+func (n *Network) Clone(dst *Network) {
+	defer dst.sort()
+	dst.clear()
+
+	// Copy the nodes into the destination
+	for _, v := range n.nodes {
+		dst.nodes = append(dst.nodes, neuron{
+			Serial: v.Serial,
+		})
 	}
 
-	// Set the values for the input neurons
-	for i, v := range input {
-		n.input[i].value = v
-	}
+	// Assign accessors
+	in, out := len(n.input), len(n.output)
+	dst.input = dst.nodes[1 : 1+in]
+	dst.output = dst.nodes[1+in : 1+in+out]
+	dst.hidden = dst.nodes[1+in+out:]
 
-	// Clean the hidden neurons values
-	for i := range n.hidden {
-		n.hidden[i].value = 0
+	// Sort the destination nodes so we can find the corresponding ones
+	sort.Sort(dst.nodes)
+	for _, v := range n.conns {
+		dst.conns = append(dst.conns, synapse{
+			From:   dst.nodes.Find(v.From.Serial),
+			To:     dst.nodes.Find(v.To.Serial),
+			Weight: v.Weight,
+			Active: v.Active,
+		})
 	}
+}
 
-	// Retrieve values and sum up exponentials
-	sum := 0.0
-	for i, neuron := range n.output {
-		v := math.Exp(neuron.Value())
-		output[i] = v
-		sum += v
-	}
-
-	// Normalize
-	for i := range output {
-		output[i] /= sum
-	}
-	return output
+// Clear clears the network for reuse.
+func (n *Network) clear() {
+	n.nodes = n.nodes[:0]
+	n.conns = n.conns[:0]
 }
 
 // sort sorts the connections depending on the neuron and assigns connection slices
@@ -70,9 +89,11 @@ func (n *Network) sort() {
 	}
 
 	// Sort by neuron ID
-	sort.Sort(sortedByNode(n.conns))
+	sort.Sort(n.conns)
 
-	// Assign connection slices to neurons
+	// Assign connection slices to neurons. This is basically sub-slicing the main
+	// array, so the "Data" pointer of the slice will point to the same underlying
+	// array, avoiding extra memory space and allocations.
 	prev, lo := n.conns[0].To, 0
 	curr, hi := n.conns[0].To, 0
 	for i, conn := range n.conns {
@@ -91,7 +112,6 @@ func (n *Network) sort() {
 func (n *Network) connect(from, to *neuron, weight float64) {
 	defer n.sort() // Keep sorted
 	n.conns = append(n.conns, synapse{
-		Serial: next(), // Innovation number
 		From:   from,   // Left neuron
 		To:     to,     // Right neuron
 		Weight: weight, // Weight for the connection
@@ -105,16 +125,26 @@ func (n *Network) Mutate() {
 
 }
 
+// Crossover applies genetic crossover between two networks. The first parent is
+// the fittest of the two.
 func (n *Network) Crossover(p1, p2 evolve.Genome) {
+	//n1, n2 := p1.(*Network), p2.(*Network)
+
+	/*
+	 * p1 should have the higher score
+	 *  - take all the genes of a
+	 *  - if there is a genome in a that is also in b, choose randomly
+	 *  - do not take disjoint genes of b
+	 *  - take excess genes of a if they exist
+	 */
+
+	// Copy of the nodes and synaposes from the fittest into this network
+	//n1.Clone(n)
 
 }
 
-// Equal checks whether the connection is equal to another connection
-/*func (c *conn) Equal(other *conn) bool {
-	return c.From == other.From && c.To == other.To
-}*/
-
-// https://github.com/Luecx/NEAT/tree/master/vid%209/src
-
-// https://sausheong.github.io/posts/how-to-build-a-simple-artificial-neural-network-with-go/
-// https://stats.stackexchange.com/questions/459491/how-do-i-use-matrix-math-in-irregular-neural-networks-generated-from-neuroevolut
+// Distance calculates the distance between two neural networks based on their
+// genome structure.
+func (n *Network) Distance(other *Network) float64 {
+	return 0
+}

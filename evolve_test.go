@@ -20,7 +20,7 @@ func TestEvolve(t *testing.T) {
 	}
 
 	fit := fitnessFor(target)
-	pop := evolve.New(population, fit, binary.Make(len(target)))
+	pop := evolve.New(population, fit, binary.New(len(target)))
 
 	// Evolve
 	i, last := 0, ""

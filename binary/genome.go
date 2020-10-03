@@ -35,8 +35,8 @@ func (g Genome) Mutate() {
 	g[i] = randByte()
 }
 
-// Make creates a function for a random genome string
-func Make(length int) func() evolve.Genome {
+// New creates a function for a random genome string
+func New(length int) evolve.Genesis {
 	return func() evolve.Genome {
 		v := make(Genome, length)
 		crand.Read(v)

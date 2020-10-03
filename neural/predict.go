@@ -3,10 +3,6 @@
 
 package neural
 
-import (
-	"math"
-)
-
 // Predict activates the network
 func (n *Network) Predict(input, output []float64) []float64 {
 	if output == nil {
@@ -31,7 +27,7 @@ func (n *Network) Predict(input, output []float64) []float64 {
 	// Retrieve values and sum up exponentials
 	sum := 0.0
 	for i, neuron := range outputs {
-		v := math.Exp(neuron.Value())
+		v := exp(neuron.Value())
 		output[i] = v
 		sum += v
 	}
@@ -58,11 +54,28 @@ func (n *neuron) Value() float64 {
 	}
 
 	// Keep the value to avoid recalculating
-	n.value = sigmoid(s)
+	n.value = swish(s)
 	return n.value
 }
 
-// Sigmod activation function.
-func sigmoid(x float64) float64 {
-	return 1.0 / (1 + math.Exp(-x))
+// Thanks https://codingforspeed.com/using-faster-exponential-approximation/
+func exp(x float64) float64 {
+	x = 1.0 + x/1024.0
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	x *= x
+	return x
+}
+
+// Swish is the x / (1 + exp(-x)) activation function. Original paper
+// https://arxiv.org/abs/1710.05941v1
+func swish(x float64) float64 {
+	return x / (1.0 + exp(-x))
 }

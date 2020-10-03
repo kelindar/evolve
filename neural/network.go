@@ -4,24 +4,30 @@
 package neural
 
 import (
+	"math/rand"
 	"sort"
+	"time"
 
 	"github.com/kelindar/evolve"
 )
 
 // Network represents a neural network.
 type Network struct {
-	input  int      // Count of input neurons
-	output int      // Count of output neurons
-	nodes  neurons  // Neurons for the network
-	conns  synapses // Synapses, sorted by ID
+	random *rand.Rand // Random source
+	input  int        // Count of input neurons
+	output int        // Count of output neurons
+	nodes  neurons    // Neurons for the network
+	conns  synapses   // Synapses, sorted by ID
 }
 
 // New creates a function for a random genome string
 func New(in, out int) evolve.Genesis {
 	origin := newNetwork(in, out)
 	return func() evolve.Genome {
-		clone := new(Network)
+		clone := &Network{
+			random: newRandom(),
+		}
+
 		origin.Clone(clone)
 		return clone
 	}
@@ -30,6 +36,7 @@ func New(in, out int) evolve.Genesis {
 // newNetwork creates a new neural network.
 func newNetwork(inputs, outputs int) *Network {
 	nn := &Network{
+		random: newRandom(),
 		input:  inputs,
 		output: outputs,
 		nodes:  makeNeurons(1+inputs, outputs),
@@ -122,24 +129,29 @@ func (n *Network) Mutate() {
 // Crossover applies genetic crossover between two networks. The first parent is
 // the fittest of the two.
 func (n *Network) Crossover(p1, p2 evolve.Genome) {
-	//n1, n2 := p1.(*Network), p2.(*Network)
-	//i1, i2 := n1.Last(), n2.Last()
-
-	/*
-	 * p1 should have the higher score
-	 *  - take all the genes of a
-	 *  - if there is a genome in a that is also in b, choose randomly
-	 *  - do not take disjoint genes of b
-	 *  - take excess genes of a if they exist
-	 */
 
 	// Copy of the nodes and synaposes from the fittest into this network
-	//n1.Clone(n)
+	n1, n2 := p1.(*Network), p2.(*Network)
+	n1.Clone(n)
 
+	// Iterate over the less fit parent and take matching genes randomly
+	for _, conn := range n2.conns {
+		if i, match := n.conns.Contains(conn.ID()); match {
+			if n.random.Intn(2) == 0 {
+				n.conns[i].Weight = conn.Weight
+			}
+		}
+	}
 }
 
 // Distance calculates the distance between two neural networks based on their
 // genome structure.
 func (n *Network) Distance(other *Network) float64 {
 	return 0
+}
+
+// newRandom creates a new random number generator
+func newRandom() *rand.Rand {
+	seed := time.Now().UnixNano()
+	return rand.New(rand.NewSource(seed))
 }

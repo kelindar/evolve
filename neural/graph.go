@@ -146,3 +146,12 @@ func (s synapses) Less(i, j int) bool {
 func (s synapses) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
+
+// Contains searches the synapses for a specific ID. For this to work correctly,
+// the synapse array should be sorted.
+func (s synapses) Contains(id uint64) (int, bool) {
+	i := sort.Search(len(s), func(i int) bool {
+		return s[i].ID() >= id
+	})
+	return i, i < len(s) && s[i].ID() == id
+}

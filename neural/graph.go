@@ -17,17 +17,29 @@ func next() uint32 {
 
 // ----------------------------------------------------------------------------------
 
+type kind byte
+
+const (
+	isHidden kind = iota
+	isInput
+	isOutput
+)
+
+// ----------------------------------------------------------------------------------
+
 // Neuron represents a neuron in the network
 type neuron struct {
 	Serial uint32    // The innovation serial number
+	Kind   kind      // The neuron kind (hidden, input or output)
 	Conns  []synapse // The incoming connections
 	value  float64   // The output value (for activation)
 }
 
 // makeNeuron creates a new neuron.
-func makeNeuron() neuron {
+func makeNeuron(kind kind) neuron {
 	return neuron{
 		Serial: next(),
+		Kind:   kind,
 	}
 }
 
@@ -51,10 +63,14 @@ func searchNode(from, to *neuron) bool {
 type neurons []neuron
 
 // makeNeurons creates a new neuron array.
-func makeNeurons(count int) neurons {
-	arr := make(neurons, 0, count)
-	for i := 0; i < count; i++ {
-		arr = append(arr, makeNeuron())
+func makeNeurons(inputs, outputs int) neurons {
+	arr := make(neurons, 0, inputs+outputs)
+	for i := 0; i < inputs; i++ {
+		arr = append(arr, makeNeuron(isInput))
+	}
+
+	for i := 0; i < outputs; i++ {
+		arr = append(arr, makeNeuron(isOutput))
 	}
 	return arr
 }
@@ -85,6 +101,11 @@ func (n neurons) Find(serial uint32) *neuron {
 	}
 
 	return nil
+}
+
+// Last selects the last neuron from the slice.
+func (n neurons) Last() *neuron {
+	return &n[len(n)-1]
 }
 
 // ----------------------------------------------------------------------------------

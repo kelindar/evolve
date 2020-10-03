@@ -10,22 +10,27 @@ import (
 // Predict activates the network
 func (n *Network) Predict(input, output []float64) []float64 {
 	if output == nil {
-		output = make([]float64, len(n.output))
+		output = make([]float64, n.output)
 	}
+
+	// Split in groups
+	sensors := n.nodes[1 : 1+n.input]
+	outputs := n.nodes[1+n.input : 1+n.input+n.output]
+	hidden := n.nodes[1+n.input+n.output:]
 
 	// Set the values for the input neurons
 	for i, v := range input {
-		n.input[i].value = v
+		sensors[i].value = v
 	}
 
 	// Clean the hidden neurons values
-	for i := range n.hidden {
-		n.hidden[i].value = 0
+	for i := range hidden {
+		hidden[i].value = 0
 	}
 
 	// Retrieve values and sum up exponentials
 	sum := 0.0
-	for i, neuron := range n.output {
+	for i, neuron := range outputs {
 		v := math.Exp(neuron.Value())
 		output[i] = v
 		sum += v

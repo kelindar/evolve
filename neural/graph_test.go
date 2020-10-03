@@ -11,8 +11,8 @@ import (
 
 func TestConnected(t *testing.T) {
 	n := []neuron{
-		makeNeuron(),
-		makeNeuron(),
+		makeNeuron(isHidden),
+		makeNeuron(isHidden),
 	}
 
 	n0, n1 := &n[0], &n[1]

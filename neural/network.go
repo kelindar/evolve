@@ -11,9 +11,8 @@ import (
 
 // Network represents a neural network.
 type Network struct {
-	input  neurons  // Input neurons and a bias neuron
-	output neurons  // Output neurons
-	hidden neurons  // Hidden neurons
+	input  int      // Count of input neurons
+	output int      // Count of output neurons
 	nodes  neurons  // Neurons for the network
 	conns  synapses // Synapses, sorted by ID
 }
@@ -29,18 +28,16 @@ func New(in, out int) evolve.Genesis {
 }
 
 // newNetwork creates a new neural network.
-func newNetwork(in, out int) *Network {
-	nodes := makeNeurons(1 + in + out)
+func newNetwork(inputs, outputs int) *Network {
 	nn := &Network{
-		nodes:  nodes,
-		input:  nodes[1 : 1+in],
-		output: nodes[1+in : 1+in+out],
-		hidden: nodes[1+in+out:],
+		input:  inputs,
+		output: outputs,
+		nodes:  makeNeurons(1+inputs, outputs),
 		conns:  make([]synapse, 0, 256),
 	}
 
 	// First is always a bias neuron
-	nn.input[0].value = 1.0
+	nn.nodes[0].value = 1.0
 	return nn
 }
 
@@ -51,17 +48,14 @@ func (n *Network) Clone(dst *Network) {
 	dst.clear()
 
 	// Copy the nodes into the destination
+	dst.input = n.input
+	dst.output = n.output
 	for _, v := range n.nodes {
 		dst.nodes = append(dst.nodes, neuron{
 			Serial: v.Serial,
+			Kind:   v.Kind,
 		})
 	}
-
-	// Assign accessors
-	in, out := len(n.input), len(n.output)
-	dst.input = dst.nodes[1 : 1+in]
-	dst.output = dst.nodes[1+in : 1+in+out]
-	dst.hidden = dst.nodes[1+in+out:]
 
 	// Sort the destination nodes so we can find the corresponding ones
 	sort.Sort(dst.nodes)
@@ -129,6 +123,7 @@ func (n *Network) Mutate() {
 // the fittest of the two.
 func (n *Network) Crossover(p1, p2 evolve.Genome) {
 	//n1, n2 := p1.(*Network), p2.(*Network)
+	//i1, i2 := n1.Last(), n2.Last()
 
 	/*
 	 * p1 should have the higher score

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestClone(t *testing.T) {
 	serial = 0
 	create := New(2, 1)
 	nn1 := create().(*Network)
@@ -18,9 +18,9 @@ func TestNew(t *testing.T) {
 
 	// Neurons must have ascending serial number
 	assert.Equal(t, uint32(1), nn1.nodes[0].Serial)
-	assert.Equal(t, uint32(2), nn1.input[0].Serial)
-	assert.Equal(t, uint32(3), nn1.input[1].Serial)
-	assert.Equal(t, uint32(4), nn1.output[0].Serial)
+	assert.Equal(t, uint32(2), nn1.nodes[1].Serial)
+	assert.Equal(t, uint32(3), nn1.nodes[2].Serial)
+	assert.Equal(t, uint32(4), nn1.nodes[3].Serial)
 
 	// Must be sorted
 	assert.True(t, sort.IsSorted(nn1.nodes))
@@ -41,10 +41,10 @@ func TestNew(t *testing.T) {
 // make2x2 creates a 2x2 tiny network
 func make2x2() *Network {
 	nn := New(2, 2)().(*Network)
-	i0 := &nn.input[0]
-	i1 := &nn.input[1]
-	o0 := &nn.output[0]
-	o1 := &nn.output[1]
+	i0 := &nn.nodes[1]
+	i1 := &nn.nodes[2]
+	o0 := &nn.nodes[3]
+	o1 := &nn.nodes[4]
 
 	// connect inputs to output
 	nn.connect(i0, o0, .5)

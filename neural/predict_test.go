@@ -21,15 +21,14 @@ func BenchmarkPredict(b *testing.B) {
 			nn.Predict(in, out)
 		}
 	})
-
 }
 
 func TestPredict(t *testing.T) {
 	nn := make2x2()
-	i0 := &nn.input[0]
-	i1 := &nn.input[1]
-	o0 := &nn.output[0]
-	o1 := &nn.output[1]
+	i0 := &nn.nodes[1]
+	i1 := &nn.nodes[2]
+	o0 := &nn.nodes[3]
+	o1 := &nn.nodes[4]
 
 	// must be connected
 	assert.True(t, i0.connected(o0))

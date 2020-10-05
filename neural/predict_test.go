@@ -9,12 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// BenchmarkPredict/10-8         	 2500016	       474 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkPredict/100-8        	  272751	      4447 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkPredict(b *testing.B) {
-	b.Run("2x2", func(b *testing.B) {
-		nn := make2x2()
-		in := []float64{1, 0}
-		out := []float64{0, 0}
+	in := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	out := []float64{0}
 
+	b.Run("10", func(b *testing.B) {
+		nn := makeNN(10)
+		b.ResetTimer()
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			nn.Predict(in, out)
+		}
+	})
+
+	b.Run("100", func(b *testing.B) {
+		nn := makeNN(100)
 		b.ResetTimer()
 		b.ReportAllocs()
 		for n := 0; n < b.N; n++ {
@@ -38,4 +49,52 @@ func TestPredict(t *testing.T) {
 
 	r := nn.Predict([]float64{0.5, 1}, nil)
 	assert.True(t, r[0] > 0.5)
+}
+
+func BenchmarkFunc(b *testing.B) {
+	var out float64
+
+	b.Run("relu", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			out = relu(float64(n))
+		}
+	})
+
+	b.Run("relu-precise", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			out = relu2(float64(n))
+		}
+	})
+
+	b.Run("swish", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			out = swish(float64(n))
+		}
+	})
+
+	b.Run("swish-precise", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			out = swish2(float64(n))
+		}
+	})
+
+	assert.NotZero(b, out)
+}
+
+func TestRelu(t *testing.T) {
+	var out1, out2 []float64
+	for i := float64(0); i <= 1.0; i += 0.01 {
+		out1 = append(out1, relu(i))
+		out2 = append(out2, relu2(i))
+	}
+
+	assert.Equal(t, out1, out2)
 }

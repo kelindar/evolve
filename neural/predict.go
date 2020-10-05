@@ -3,6 +3,10 @@
 
 package neural
 
+import (
+	"math"
+)
+
 // Predict activates the network
 func (n *Network) Predict(input, output []float64) []float64 {
 	if output == nil {
@@ -60,9 +64,7 @@ func (n *neuron) Value() float64 {
 
 // Thanks https://codingforspeed.com/using-faster-exponential-approximation/
 func exp(x float64) float64 {
-	x = 1.0 + x/1024.0
-	x *= x
-	x *= x
+	x = 1.0 + x/256.0
 	x *= x
 	x *= x
 	x *= x
@@ -78,4 +80,29 @@ func exp(x float64) float64 {
 // https://arxiv.org/abs/1710.05941v1
 func swish(x float64) float64 {
 	return x / (1.0 + exp(-x))
+}
+
+func swish2(x float64) float64 {
+	return x / (1.0 + math.Exp(-x))
+}
+
+func relu(x float64) float64 {
+	// s, e, f mean `sign bit`, `exponent`, and `fractional`, respectively.
+	//     seeeffff |     seeeffff
+	//     00010100 |     10010100 --+
+	// >>        31 |  >>       31   |
+	// -------------+-------------   |
+	// not 00000000 | not 11111111   |
+	// -------------+-------------   |
+	//     11111111 |     00000000   |
+	// and 00010100 | and 10010100 <-+
+	// -------------+-------------
+	//     00010100 |     00000000
+	// ==         x |          0.0
+	v := math.Float64bits(x)
+	return math.Float64frombits(v &^ (v >> 63))
+}
+
+func relu2(x float64) float64 {
+	return math.Max(x, 0)
 }

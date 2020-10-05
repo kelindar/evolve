@@ -92,14 +92,26 @@ func (n *Network) sort() {
 	// Sort by neuron ID
 	sort.Sort(n.conns)
 
+	// Prepare the first connection
+	conn := &n.conns[0]
+	conn.From = n.nodes.Find(conn.From.Serial)
+	conn.To = n.nodes.Find(conn.To.Serial)
+
 	// Assign connection slices to neurons. This is basically sub-slicing the main
 	// array, so the "Data" pointer of the slice will point to the same underlying
 	// array, avoiding extra memory space and allocations.
-	prev, lo := n.conns[0].To, 0
-	curr, hi := n.conns[0].To, 0
-	for i, conn := range n.conns {
+	prev, lo := conn.To, 0
+	curr, hi := conn.To, 0
+	for i := 0; i < len(n.conns); i++ {
+		conn = &n.conns[i]
+
+		// Re-assign pointers, to make sure that the pointers to neurons are correct
+		// which may be caused by nodes slice being re-allocated elsewhere during
+		// append()
+		conn.From = n.nodes.Find(conn.From.Serial)
+		conn.To = n.nodes.Find(conn.To.Serial)
 		curr, hi = conn.To, i
-		if prev != curr {
+		if prev.Serial != curr.Serial {
 			prev.Conns = n.conns[lo:hi]
 			prev, lo = curr, hi
 		}
@@ -110,14 +122,37 @@ func (n *Network) sort() {
 }
 
 // connect connects two neurons together.
-func (n *Network) connect(from, to *neuron, weight float64) {
+func (n *Network) connect(from, to uint32, weight float64) {
+	n0 := n.nodes.Find(from)
+	n1 := n.nodes.Find(to)
+	if n0.connected(n1) {
+		return
+	}
+
 	defer n.sort() // Keep sorted
 	n.conns = append(n.conns, synapse{
-		From:   from,   // Left neuron
-		To:     to,     // Right neuron
+		From:   n0,     // Left neuron
+		To:     n1,     // Right neuron
 		Weight: weight, // Weight for the connection
 		Active: true,   // Default to active
 	})
+}
+
+// Split splits the connetion by adding a neuron in the middle
+func (n *Network) split(conn *synapse) {
+	defer n.sort() // Keep sorted
+
+	// Deactivate the connection and add a neuron
+	conn.Active = false
+	n.nodes = append(n.nodes, neuron{
+		Serial: next(),
+		Kind:   isHidden,
+	})
+
+	// Create 2 new connections
+	middle := n.nodes.Last()
+	n.connect(conn.From.Serial, middle.Serial, 1.0)
+	n.connect(middle.Serial, conn.To.Serial, conn.Weight)
 }
 
 // Mutate mutates the network.

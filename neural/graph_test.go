@@ -31,3 +31,32 @@ func TestConnected(t *testing.T) {
 	assert.True(t, n0.connected(n1))
 	assert.True(t, n1.connected(n0))
 }
+
+func TestSplit(t *testing.T) {
+	serial = 0
+	nn := New(1, 1)().(*Network)
+	in := &nn.nodes[1]
+	out := &nn.nodes[2]
+
+	// create a hidden layer
+	for i := 0; i < 10; i++ {
+		nn.split(&synapse{
+			From:   in,
+			To:     out,
+			Weight: 0.5,
+		})
+	}
+
+	/*for _, n := range nn.nodes {
+		println("neuron", n.Serial, len(n.Conns))
+		for _, c := range n.Conns {
+			println("  ", c.From.Serial, "->", c.To.Serial)
+		}
+	}*/
+
+	assert.Equal(t, 0, len(nn.nodes[1].Conns))
+	assert.Equal(t, 10, len(nn.nodes[2].Conns))
+	for i := 3; i < 13; i++ {
+		assert.Equal(t, 1, len(nn.nodes[i].Conns))
+	}
+}

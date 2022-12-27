@@ -28,14 +28,13 @@ type Genome interface {
 
 // Population represents a population for evolution
 type Population struct {
-	sync.Mutex
-	rand       *rand.Rand // The random number generator
-	values     []Evolver  // The population that needs to be evolved
-	fitnessFn  Fitness    // The fitness function
-	fitnessMax float32    // The max fitness
-	fitnessOf  []float32  // The fitness cache
-	pool       int        // The current pool to use
-	pools      [][]Genome // The genome pools to avoid allocs
+	mu        sync.Mutex
+	rand      *rand.Rand  // The random number generator
+	values    []Evolver   // The population that needs to be evolved
+	fitnessFn Fitness     // The fitness function
+	fitnessOf []float32   // The fitness cache
+	pool      int         // The current pool to use
+	pools     [2][]Genome // The genome pools to avoid allocs
 }
 
 // New creates a new population controller. This function takes a population of fixed
@@ -45,7 +44,7 @@ func New(population []Evolver, fitness Fitness, genesis Genesis) *Population {
 	p := &Population{
 		rand:      rand.New(rand.NewSource(1)),
 		values:    population,
-		pools:     make([][]Genome, 2),
+		pools:     [2][]Genome{},
 		fitnessOf: make([]float32, n),
 		fitnessFn: fitness,
 	}
@@ -73,11 +72,14 @@ func (p *Population) commit(pool []Genome) {
 
 // Evolve evolves the population
 func (p *Population) Evolve() {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	// Evaluate the fitness and cache it
-	p.fitnessMax = p.evaluate()
+	for i, v := range p.values {
+		p.fitnessOf[i] = p.fitnessFn(v)
+	}
+
 	p.pool = (p.pool + 1) % 2
 	buffer := p.pools[p.pool]
 	for i := range p.values {
@@ -108,27 +110,14 @@ func (p *Population) pickParents() (Evolver, Evolver) {
 	return p2, p1
 }
 
-// pickMate selects a parent from the population
-func (p *Population) pickMate() (Evolver, float32) {
-	n := len(p.values)
-	max := p.fitnessMax
-	rng := p.rand
-	for {
-		i := rng.Intn(n)
-		f := p.fitnessOf[i]
-		if rng.Float32()*max <= f {
-			return p.values[i], f
-		}
-	}
-}
-
-// evaluate computes the current fitness and caches it
-func (p *Population) evaluate() (max float32) {
-	for i, v := range p.values {
-		f := p.fitnessFn(v)
-		p.fitnessOf[i] = f
-		if f > max {
-			max = f
+// pickMate selects a parent from the population using a tournament selection.
+func (p *Population) pickMate() (bestEvolver Evolver, bestFitness float32) {
+	const tournamentSize = 4
+	for r := 0; r < tournamentSize; r++ {
+		i := p.rand.Int31n(int32(len(p.values)))
+		if f := p.fitnessOf[i]; f >= bestFitness {
+			bestEvolver = p.values[i]
+			bestFitness = f
 		}
 	}
 	return
@@ -136,8 +125,8 @@ func (p *Population) evaluate() (max float32) {
 
 // Fittest returns the fittest evolver
 func (p *Population) Fittest() (best Evolver) {
-	p.Lock()
-	defer p.Unlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	max := float32(0)
 	for i, v := range p.values {

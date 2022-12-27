@@ -35,16 +35,16 @@ func TestEvolve(t *testing.T) {
 	pop := newPop(256, target)
 
 	// Evolve
-	i, last := 0, ""
-	for ; i < 100000; i++ {
-		pop.Evolve()
+	var last evolve.Evolver
+	for i := 0; i < 100000; i++ {
+
 		//	println(string(pop.best(fit).Genome()))
-		if last = toString(pop.Fittest().Genome()); last == target {
+		if last = pop.Evolve(); toString(last.Genome()) == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, toString(pop.Fittest().Genome()))
+	assert.Equal(t, target, toString(last.Genome()))
 }
 
 func TestConverge(t *testing.T) {
@@ -55,8 +55,7 @@ func TestConverge(t *testing.T) {
 	for exp := 0; exp < experiments; exp++ {
 		pop := newPop(256, target)
 		for i := 0; i < 100000; i++ {
-			pop.Evolve()
-			if last := toString(pop.Fittest().Genome()); last == target {
+			if fittest := pop.Evolve(); toString(fittest.Genome()) == target {
 				results = append(results, float64(i))
 				break
 			}

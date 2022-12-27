@@ -31,8 +31,8 @@ type Population struct {
 	mu        sync.Mutex
 	rand      *rand.Rand  // The random number generator
 	values    []Evolver   // The population that needs to be evolved
-	fitnessFn Fitness     // The fitness function
 	fitnessOf []float32   // The fitness cache
+	fitnessFn Fitness     // The fitness function
 	pool      int         // The current pool to use
 	pools     [2][]Genome // The genome pools to avoid allocs
 }
@@ -71,13 +71,18 @@ func (p *Population) commit(pool []Genome) {
 }
 
 // Evolve evolves the population
-func (p *Population) Evolve() {
+func (p *Population) Evolve() (fittest Evolver) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	// Evaluate the fitness and cache it
+	best := float32(0)
 	for i, v := range p.values {
 		p.fitnessOf[i] = p.fitnessFn(v)
+		if fitness := p.fitnessOf[i]; fitness >= best {
+			fittest = p.values[i]
+			best = fitness
+		}
 	}
 
 	p.pool = (p.pool + 1) % 2
@@ -97,6 +102,7 @@ func (p *Population) Evolve() {
 
 	// Write the genome pool
 	p.commit(buffer)
+	return
 }
 
 // pickParents selects 2 parents from the population and sorts them by their fitness.
@@ -120,20 +126,5 @@ func (p *Population) pickMate() (bestEvolver Evolver, bestFitness float32) {
 			bestFitness = f
 		}
 	}
-	return
-}
-
-// Fittest returns the fittest evolver
-func (p *Population) Fittest() (best Evolver) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	max := float32(0)
-	for i, v := range p.values {
-		if f := p.fitnessOf[i]; f >= max {
-			best, max = v, f
-		}
-	}
-
 	return
 }

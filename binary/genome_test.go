@@ -23,15 +23,14 @@ func TestEvolve(t *testing.T) {
 	pop := evolve.New(population, fit, binary.New(len(target)))
 
 	// Evolve
-	i, last := 0, ""
-	for ; i < 100000; i++ {
-		pop.Evolve()
-		if last = toString(pop.Fittest().Genome()); last == target {
+	var last evolve.Evolver
+	for i := 0; i < 100000; i++ {
+		if last = pop.Evolve(); toString(last.Genome()) == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, toString(pop.Fittest().Genome()))
+	assert.Equal(t, target, toString(last.Genome()))
 }
 
 // fitnessFor returns a fitness function for a string

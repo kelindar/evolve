@@ -31,20 +31,17 @@ func BenchmarkGenome(b *testing.B) {
 
 func TestEvolve(t *testing.T) {
 	const target = "This is evolving..."
-	const n = 200
 	pop := newPop(256, target)
 
 	// Evolve
-	var last evolve.Evolver
+	var last *binary.Genome
 	for i := 0; i < 100000; i++ {
-
-		//	println(string(pop.best(fit).Genome()))
-		if last = pop.Evolve(); toString(last.Genome()) == target {
+		if last = pop.Evolve(); last.String() == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, toString(last.Genome()))
+	assert.Equal(t, target, last.String())
 }
 
 func TestConverge(t *testing.T) {
@@ -55,7 +52,7 @@ func TestConverge(t *testing.T) {
 	for exp := 0; exp < experiments; exp++ {
 		pop := newPop(256, target)
 		for i := 0; i < 100000; i++ {
-			if fittest := pop.Evolve(); toString(fittest.Genome()) == target {
+			if fittest := pop.Evolve(); fittest.String() == target {
 				results = append(results, float64(i))
 				break
 			}
@@ -65,23 +62,30 @@ func TestConverge(t *testing.T) {
 	assert.LessOrEqual(t, median(results), float64(125))
 }
 
-// newPop returns a new population for tests
-func newPop(n int, target string) *evolve.Population {
-	population := make([]evolve.Evolver, 0, n)
-	for i := 0; i < n; i++ {
-		population = append(population, new(text))
-	}
+func TestRange(t *testing.T) {
+	const target = "ab"
+	pop := newPop(100, target)
+	pop.Evolve()
 
+	count := 0
+	pop.Range(func(genome *binary.Genome, fitness float32) {
+		count++
+	})
+
+	assert.Equal(t, 100, count)
+}
+
+// newPop returns a new population for tests
+func newPop(n int, target string) *evolve.Population[*binary.Genome] {
 	fit := fitnessFor(target)
-	return evolve.New(population, fit, binary.New(len(target)))
+	return evolve.New(n, fit, binary.New(len(target)))
 }
 
 // fitnessFor returns a fitness function for a string
-func fitnessFor(text string) evolve.Fitness {
+func fitnessFor(text string) func(*binary.Genome) float32 {
 	target := []byte(text)
-	return func(v evolve.Evolver) float32 {
+	return func(genome *binary.Genome) float32 {
 		var score float32
-		genome := v.Genome().(*binary.Genome)
 		for i, v := range *genome {
 			if v == target[i] {
 				score++
@@ -89,25 +93,6 @@ func fitnessFor(text string) evolve.Fitness {
 		}
 		return score / float32(len(target))
 	}
-}
-
-// Text represents a text with a dna (text itself in this case)
-type text struct {
-	dna evolve.Genome
-}
-
-// Genome returns the genome
-func (t *text) Genome() evolve.Genome {
-	return t.dna
-}
-
-// Evolve updates the genome
-func (t *text) Evolve(v evolve.Genome) {
-	t.dna = v
-}
-
-func toString(v evolve.Genome) string {
-	return string(*v.(*binary.Genome))
 }
 
 func median(data []float64) float64 {

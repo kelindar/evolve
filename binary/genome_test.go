@@ -14,31 +14,26 @@ import (
 func TestEvolve(t *testing.T) {
 	const target = "abc"
 	const n = 200
-	population := make([]evolve.Evolver, 0, n)
-	for i := 0; i < n; i++ {
-		population = append(population, new(text))
-	}
 
 	fit := fitnessFor(target)
-	pop := evolve.New(population, fit, binary.New(len(target)))
+	pop := evolve.New(n, fit, binary.New(len(target)))
 
 	// Evolve
-	var last evolve.Evolver
+	var last *binary.Genome
 	for i := 0; i < 100000; i++ {
-		if last = pop.Evolve(); toString(last.Genome()) == target {
+		if last = pop.Evolve(); last.String() == target {
 			break
 		}
 	}
 
-	assert.Equal(t, target, toString(last.Genome()))
+	assert.Equal(t, target, last.String())
 }
 
 // fitnessFor returns a fitness function for a string
-func fitnessFor(text string) evolve.Fitness {
+func fitnessFor(text string) func(*binary.Genome) float32 {
 	target := []byte(text)
-	return func(v evolve.Evolver) float32 {
+	return func(genome *binary.Genome) float32 {
 		var score float32
-		genome := v.Genome().(*binary.Genome)
 		for i, v := range *genome {
 			if v == target[i] {
 				score++
@@ -46,23 +41,4 @@ func fitnessFor(text string) evolve.Fitness {
 		}
 		return score / float32(len(target))
 	}
-}
-
-// Text represents a text with a dna (text itself in this case)
-type text struct {
-	dna evolve.Genome
-}
-
-// Genome returns the genome
-func (t *text) Genome() evolve.Genome {
-	return t.dna
-}
-
-// Evolve updates the genome
-func (t *text) Evolve(v evolve.Genome) {
-	t.dna = v
-}
-
-func toString(v evolve.Genome) string {
-	return string(*v.(*binary.Genome))
 }

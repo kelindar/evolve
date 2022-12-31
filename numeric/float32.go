@@ -58,7 +58,7 @@ func (g *Float32s) Crossover(p1, p2 evolve.Genome) {
 
 // crossover calculates a crossover between 2 numbers
 func crossover(v1, v2 float32) float32 {
-	const delta = 0.5
+	const delta = 0.10
 	switch {
 	case isNan(v1) && isNan(v2):
 		return randFloat32()

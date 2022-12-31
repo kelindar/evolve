@@ -108,7 +108,7 @@ func (p *Population[T]) pickMate() (bestEvolver T, bestFitness float32) {
 	const tournamentSize = 4
 	for r := 0; r < tournamentSize; r++ {
 		i := p.rand.Int31n(int32(len(p.genomes)))
-		if f := p.fitnessOf[i]; f >= bestFitness {
+		if f := p.fitnessOf[i]; f >= bestFitness || bestFitness == 0 {
 			bestEvolver = p.genomes[i]
 			bestFitness = f
 		}

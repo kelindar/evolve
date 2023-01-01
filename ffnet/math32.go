@@ -18,20 +18,17 @@ func isNan(v float32) bool {
 }
 
 func swish(x float32) float32 {
-	return x / (1.0 + exp(-x))
-}
-
-func exp(x float32) float32 {
-	x = 1.0 + x/256.0
-	x *= x
-	x *= x
-	x *= x
-	x *= x
-	x *= x
-	x *= x
-	x *= x
-	x *= x
-	return x
+	r := 1.0 + -x/256.0
+	r *= r
+	r *= r
+	r *= r
+	r *= r
+	r *= r
+	r *= r
+	r *= r
+	r *= r
+	r++
+	return x / r
 }
 
 // ---------------------------------- Matrix ----------------------------------
@@ -78,7 +75,11 @@ func (m *matrix) Reset(rows, cols int) {
 
 	// compiles to runtime.memclrNoHeapPointers
 	m.Data = m.Data[:size]
-	for i := range m.Data {
+	/*for i := range m.Data {
+		m.Data[i] = 0 // cleanup
+	}*/
+
+	for i := 0; i < len(m.Data); i++ {
 		m.Data[i] = 0 // cleanup
 	}
 }

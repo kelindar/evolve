@@ -10,11 +10,11 @@ import (
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkPredict/10x2x1-8         	12936010	        92.73 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x10x1-8        	 4756336	       254.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x100x1-8       	  544728	      2152 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x1000x1-8      	   56283	     21218 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x10000x1-8     	    5713	    214234 ns/op	       7 B/op	       0 allocs/op
+BenchmarkPredict/10x2x1-8         	12393556	        95.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x10x1-8        	 4104460	       288.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x100x1-8       	  479984	      2454 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x1000x1-8      	   49237	     24248 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x10000x1-8     	    4789	    240894 ns/op	       8 B/op	       0 allocs/op
 */
 func BenchmarkPredict(b *testing.B) {
 	for _, size := range []int{2, 10, 100, 1000, 10000} {

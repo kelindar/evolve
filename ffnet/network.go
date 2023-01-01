@@ -69,12 +69,11 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 	dst.Reset(m.Rows, n.Cols)
 
-	// Perform non-transposed matrix mltiply using "y=a*x+y" routine (GEMM)
-	// inlined to avoid unnecessary function call
+	// Perform non-transposed matrix mltiply
 	for i := 0; i < m.Rows; i++ {
-		ctmp := dst.Data[i : i+n.Cols]
-		for l, v := range m.Data[i : i+m.Cols] {
-			axpyUnitary(v, n.Data[l:l+n.Cols], ctmp)
+		y := dst.Data[i : i+n.Cols]
+		for l, a := range m.Data[i : i+m.Cols] {
+			axpy(a, n.Data[l:l+n.Cols], y)
 		}
 	}
 
@@ -83,6 +82,15 @@ func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 		dst.Data[i] = swish(dst.Data[i])
 	}
 	return dst
+}
+
+// axpy function, this doesn't use any SIMD as it seems like this version
+// is actually faster than blas32 one from gonum
+func axpy(alpha float32, x, y []float32) {
+	_ = y[len(x)-1] // remove bounds checks
+	for i, v := range x {
+		y[i] += alpha * v
+	}
 }
 
 // Crossover performs crossover between two genomes

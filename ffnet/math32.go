@@ -34,24 +34,13 @@ func exp(x float32) float32 {
 	return x
 }
 
-// randomly generate a float64 array
-func randomArray(size int, v float64) (data []float32) {
-	dist := distuv.Uniform{
-		Min: -1 / math.Sqrt(v),
-		Max: 1 / math.Sqrt(v),
-	}
-
-	data = make([]float32, size)
-	for i := 0; i < size; i++ {
-		data[i] = float32(dist.Rand())
-	}
-	return
-}
+// ---------------------------------- Matrix ----------------------------------
 
 // matrix represents a matrix using the conventional storage scheme.
 type matrix struct {
-	Rows, Cols int
-	Data       []float32
+	Data []float32
+	Rows int
+	Cols int
 }
 
 func newDense(r, c int, data []float32) matrix {
@@ -87,8 +76,23 @@ func (m *matrix) Reset(rows, cols int) {
 		return
 	}
 
+	// compiles to runtime.memclrNoHeapPointers
 	m.Data = m.Data[:size]
-	for i := 0; i < len(m.Data); i++ {
+	for i := range m.Data {
 		m.Data[i] = 0 // cleanup
 	}
+}
+
+// randomly generate a float64 array
+func randomArray(size int, v float64) (data []float32) {
+	dist := distuv.Uniform{
+		Min: -1 / math.Sqrt(v),
+		Max: +1 / math.Sqrt(v),
+	}
+
+	data = make([]float32, size)
+	for i := 0; i < size; i++ {
+		data[i] = float32(dist.Rand())
+	}
+	return
 }

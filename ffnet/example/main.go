@@ -13,13 +13,13 @@ import (
 
 // XOR tests
 var tests = []struct {
-	input  []float64
-	output float64
+	input  []float32
+	output float32
 }{
-	{input: []float64{1, 0, 0}, output: 0},
-	{input: []float64{1, 0, 1}, output: 1},
-	{input: []float64{1, 1, 0}, output: 1},
-	{input: []float64{1, 1, 1}, output: 0},
+	{input: []float32{1, 0, 0}, output: 0},
+	{input: []float32{1, 0, 1}, output: 1},
+	{input: []float32{1, 1, 0}, output: 1},
+	{input: []float32{1, 1, 1}, output: 0},
 }
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	for i := 0; ; i++ { // loop forever
 		fittest := pop.Evolve()
 		if i%1000 == 0 {
-			fmt.Printf("gen %d: best score = %.2f%% (%s)\n", i,
+			fmt.Printf("gen %d: best score = %.2f%% %s\n", i,
 				evaluateXOR(fittest)/float32(len(tests))*100, fittest.String())
 		}
 	}
@@ -38,8 +38,8 @@ func main() {
 
 func evaluateXOR(g *ffnet.FeedForward) (score float32) {
 	for _, tc := range tests {
-		out := g.Predict(tc.input).At(0, 0)
-		score += (1 - float32(math.Abs(out-tc.output)))
+		out := g.Predict(tc.input, nil)[0]
+		score += (1 - float32(math.Abs(float64(out-tc.output))))
 	}
 	return
 }

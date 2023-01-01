@@ -12,7 +12,7 @@ import (
 	"github.com/kelindar/evolve/numeric"
 )
 
-func main() {
+func main2() {
 	pop := evolve.New(256, evaluateTanh, numeric.New(1))
 	for i := 0; ; i++ { // loop forever
 		fittest := pop.Evolve()

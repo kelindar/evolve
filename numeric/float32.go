@@ -38,7 +38,7 @@ func (g *Float32s) String() string {
 
 // Mutate mutates a random gene
 func (g *Float32s) Mutate() {
-	const rate = 0.01
+	const rate = 0.02
 	if mrand.Float32() >= rate {
 		return
 	}
@@ -79,8 +79,4 @@ func randFloat32() float32 {
 	v := make([]byte, 4)
 	crand.Read(v)
 	return math.Float32frombits(binary.BigEndian.Uint32(v))
-}
-
-func abs32(x float32) float32 {
-	return math.Float32frombits(math.Float32bits(x) &^ (1 << 31))
 }

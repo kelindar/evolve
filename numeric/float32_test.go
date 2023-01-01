@@ -17,11 +17,12 @@ func TestEvolve(t *testing.T) {
 
 	// Evolve
 	var last *numeric.Float32s
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 1000; i++ {
 		last = pop.Evolve()
 	}
 
 	assert.InDelta(t, 3.4, (*last)[0], 0.1)
+	assert.NotEmpty(t, last.String())
 }
 
 func evaluateTanh(g *numeric.Float32s) float32 {

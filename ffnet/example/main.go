@@ -24,7 +24,7 @@ var tests = []struct {
 
 func main() {
 	pop := evolve.New(256, evaluateXOR, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward(3, 2, 1)
+		return ffnet.NewFeedForward([]int{3, 2, 1})
 	})
 
 	for i := 0; ; i++ { // loop forever

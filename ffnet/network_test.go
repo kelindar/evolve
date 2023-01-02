@@ -19,7 +19,7 @@ BenchmarkPredict/10x10000x1-8     	    4789	    240894 ns/op	       8 B/op	     
 func BenchmarkPredict(b *testing.B) {
 	for _, size := range []int{2, 10, 100, 1000, 10000} {
 		b.Run(fmt.Sprintf("10x%dx1", size), func(b *testing.B) {
-			nn := NewFeedForward(10, size, 1)
+			nn := NewFeedForward([]int{10, size, 1})
 			in := make([]float32, 10)
 			out := make([]float32, 1)
 			b.ReportAllocs()
@@ -37,7 +37,7 @@ BenchmarkEvolve-8   	   25706	     46466 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkEvolve(b *testing.B) {
 	pop := evolve.New(256, func(*FeedForward) float32 { return 0 }, func() *FeedForward {
-		return NewFeedForward(3, 2, 1)
+		return NewFeedForward([]int{3, 2, 1})
 	})
 
 	b.ReportAllocs()
@@ -66,8 +66,8 @@ func TestXOR(t *testing.T) {
 }
 
 func newXOR() *FeedForward {
-	return NewFeedForward(3, 2, 1,
-		[]float32{-0.8011746, 1.5051053, -1.7070092, 1.8089261, 63.063934, -88.076096},
-		[]float32{2.8215864, 0.5676709},
+	return NewFeedForward([]int{3, 2, 1},
+		[]float32{-1.7840801, -2.0132465, 4.0092106, -23.046167, 6.9322524, -85.55898},
+		[]float32{0.5069218, 0.5106552},
 	)
 }

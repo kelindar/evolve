@@ -13,24 +13,29 @@ import (
 
 // FeedForward represents a feed forward neural network
 type FeedForward struct {
-	mu              sync.Mutex
-	inputLayerSize  int
-	hiddenLayerSize int
-	outputLayerSize int
-	weights         [2]matrix
-	scratch         [2]matrix
+	mu         sync.Mutex
+	sensorSize int
+	hiddenSize []int
+	outputSize int
+	weights    []matrix
+	scratch    [2]matrix
 }
 
 // NewFeedForward creates a new NeuralNetwork
-func NewFeedForward(inputLayerSize, hiddenLayerSize, outputLayerSize int, weights ...[]float32) *FeedForward {
+func NewFeedForward(shape []int, weights ...[]float32) *FeedForward {
 	nn := &FeedForward{
-		inputLayerSize:  inputLayerSize,
-		hiddenLayerSize: hiddenLayerSize,
-		outputLayerSize: outputLayerSize,
+		sensorSize: shape[0],
+		hiddenSize: shape[1 : len(shape)-1],
+		outputSize: shape[len(shape)-1],
 	}
 
-	nn.weights[0] = newDense(hiddenLayerSize, inputLayerSize, randomArray(inputLayerSize*hiddenLayerSize, float64(hiddenLayerSize)))
-	nn.weights[1] = newDense(outputLayerSize, hiddenLayerSize, randomArray(hiddenLayerSize*outputLayerSize, float64(hiddenLayerSize)))
+	// Create weight matrices for each layer
+	prevLayerSize := nn.sensorSize
+	for _, hiddenLayerSize := range nn.hiddenSize {
+		nn.weights = append(nn.weights, newDense(hiddenLayerSize, prevLayerSize, randomArray(prevLayerSize*hiddenLayerSize, float64(hiddenLayerSize))))
+		prevLayerSize = hiddenLayerSize
+	}
+	nn.weights = append(nn.weights, newDense(nn.outputSize, prevLayerSize, randomArray(prevLayerSize*nn.outputSize, float64(prevLayerSize))))
 
 	// Optionally, construct a network from pre-defined values
 	for i := range weights {
@@ -47,22 +52,23 @@ func NewFeedForward(inputLayerSize, hiddenLayerSize, outputLayerSize int, weight
 // Predict performs a forward propagation through the neural network
 func (nn *FeedForward) Predict(input, output []float32) []float32 {
 	if output == nil {
-		output = make([]float32, nn.outputLayerSize)
+		output = make([]float32, nn.outputSize)
 	}
 
 	// Set the input matrix
-	l0 := matrix{
+	layer := &matrix{
 		Rows: len(input), Cols: 1,
 		Data: input,
 	}
 
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
-	l1 := nn.forward(&nn.scratch[0], &nn.weights[0], &l0)
-	l2 := nn.forward(&nn.scratch[1], &nn.weights[1], l1)
+	for i := range nn.weights {
+		layer = nn.forward(&nn.scratch[i%2], &nn.weights[i], layer)
+	}
 
 	// Copy the output so we can release the lock
-	copy(output, l2.Data)
+	copy(output, layer.Data)
 	return output
 }
 
@@ -77,9 +83,11 @@ func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 		}
 	}
 
-	// Apply activation function
+	// Apply activation function (inlined Leaky ReLU)
 	for i := 0; i < len(dst.Data); i++ {
-		dst.Data[i] = swish(dst.Data[i])
+		if x := dst.Data[i]; x < 0 {
+			dst.Data[i] = 0.01 * x
+		}
 	}
 	return dst
 }

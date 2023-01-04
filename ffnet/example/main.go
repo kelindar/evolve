@@ -29,9 +29,13 @@ func main() {
 
 	for i := 0; ; i++ { // loop forever
 		fittest := pop.Evolve()
-		if i%1000 == 0 {
-			fmt.Printf("gen %d: best score = %.2f%% %s\n", i,
-				evaluateXOR(fittest)/float32(len(tests))*100, fittest.String())
+		fitness := evaluateXOR(fittest) / float32(len(tests)) * 100
+		switch {
+		case fitness >= 99.99:
+			fmt.Printf("[#%.2d] converged with score = %.2f%% %s\n", i, fitness, fittest.String())
+			return
+		case i%1000 == 0:
+			fmt.Printf("[#%.2d] best score = %.2f%%\n", i, fitness)
 		}
 	}
 }

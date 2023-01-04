@@ -11,16 +11,16 @@ import (
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkPredict/10x2x1-8         	33971622	        35.35 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x10x1-8        	27273470	        44.41 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x100x1-8       	 6984877	       173.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x1000x1-8      	 1000000	      1329 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPredict/10x10000x1-8     	   88837	     13396 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x2x1-8         	21970818	        54.49 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x10x1-8        	13367792	        86.16 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x100x1-8       	 2998368	       399.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x1000x1-8      	  319666	      3729 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPredict/10x10000x1-8     	   30996	     39159 ns/op	       1 B/op	       0 allocs/op
 */
 func BenchmarkPredict(b *testing.B) {
-	for _, size := range []int{2, 10} {
+	for _, size := range []int{2, 10, 100, 1000, 10000} {
 		b.Run(fmt.Sprintf("10x%dx1", size), func(b *testing.B) {
-			nn := NewFeedForward([]int{10, size, size, 1})
+			nn := NewFeedForward([]int{10, size, 1})
 			in := make([]float32, 10)
 			out := make([]float32, 1)
 			b.ReportAllocs()
@@ -29,10 +29,6 @@ func BenchmarkPredict(b *testing.B) {
 				nn.Predict(in, out)
 			}
 		})
-	}
-
-	for size, count := range sizes {
-		fmt.Printf("size=%v, count=%v\n", size, count)
 	}
 }
 
@@ -76,7 +72,11 @@ func BenchmarkDeep(b *testing.B) {
 }
 
 func TestXOR(t *testing.T) {
-	nn := newXOR()
+	nn := NewFeedForward([]int{3, 2, 1},
+		[]float32{-0.27597702, -0.004559007, 0.92628616, -0.5290589, -1.144069, 0.32015398},
+		[]float32{1.5643033, 3.2390056},
+	)
+
 	tests := []struct {
 		input  []float32
 		output float32
@@ -87,9 +87,10 @@ func TestXOR(t *testing.T) {
 		{input: []float32{1, 1, 1}, output: 0},
 	}
 	for _, tc := range tests {
-		const delta = 0.05
-		out := nn.Predict(tc.input, nil)[0]
-		assert.InDelta(t, tc.output, out, delta)
+		const delta = 0.01
+		out := nn.Predict(tc.input, nil)
+		assert.Equal(t, 1, len(out))
+		assert.InDelta(t, tc.output, out[0], delta)
 	}
 }
 
@@ -127,13 +128,6 @@ func TestAXPY(t *testing.T) {
 	_ = x[0]
 	_ = y[0]
 	assert.Equal(t, []float32{3, 5, 7, 9}, y)
-}
-
-func newXOR() *FeedForward {
-	return NewFeedForward([]int{3, 2, 1},
-		[]float32{-0.21966185, 0.77679425, -0.9666261, -0.16248938, -1.5812368, 1.7551233},
-		[]float32{1.814858, 0.6414089},
-	)
 }
 
 // axpyRef function, this doesn't use any SIMD as it seems like this version

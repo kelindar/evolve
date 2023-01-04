@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"unsafe"
 
 	"github.com/kelindar/evolve"
 )
@@ -32,10 +33,10 @@ func NewFeedForward(shape []int, weights ...[]float32) *FeedForward {
 	// Create weight matrices for each layer
 	layer := nn.sensorSize
 	for _, hidden := range nn.hiddenSize {
-		nn.weights = append(nn.weights, newDense(hidden, layer, randArr(layer*hidden, float64(hidden))))
+		nn.weights = append(nn.weights, newDense(layer, hidden, randArr(hidden*layer, float64(hidden))))
 		layer = hidden
 	}
-	nn.weights = append(nn.weights, newDense(nn.outputSize, layer, randArr(layer*nn.outputSize, float64(layer))))
+	nn.weights = append(nn.weights, newDense(layer, nn.outputSize, randArr(nn.outputSize*layer, float64(layer))))
 
 	// Optionally, construct a network from pre-defined values
 	for i := range weights {
@@ -57,15 +58,14 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 
 	// Set the input matrix
 	layer := &matrix{
-		Rows: len(input),
-		Cols: 1,
+		Rows: 1, Cols: len(input),
 		Data: input,
 	}
 
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
 	for i := range nn.weights {
-		layer = nn.forward(&nn.scratch[i%2], &nn.weights[i], layer)
+		layer = nn.forward(&nn.scratch[i%2], layer, &nn.weights[i])
 	}
 
 	// Copy the output so we can release the lock
@@ -73,26 +73,12 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 	return output
 }
 
+// forward performs M·N matrix multiplication and writes the result to dst after applying ReLU
 func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 	dst.Reset(m.Rows, n.Cols)
-
-	// Perform non-transposed matrix mltiply
-	/*for i := 0; i < m.Rows; i++ {
-		y := dst.Data[i : i+n.Cols]
-		for l, a := range m.Data[i : i+m.Cols] {
-			//axpy(a, n.Data[l:l+n.Cols], y)
-			x := n.Data[l : l+n.Cols]
-			_f32_axpy(unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]), uint64(len(y)), a)
-		}
-	}*/
-
-	/*
-		_f32_matmul(
+	_f32_matmul(
 		unsafe.Pointer(&dst.Data[0]), unsafe.Pointer(&m.Data[0]), unsafe.Pointer(&n.Data[0]),
 		uint64(m.Rows), uint64(m.Cols), uint64(n.Rows), uint64(n.Cols))
-	*/
-
-	matmul(dst.Data, m.Data, n.Data, m.Rows, m.Cols, n.Rows, n.Cols)
 
 	// Apply activation function (inlined Leaky ReLU)
 	for i, x := range dst.Data {

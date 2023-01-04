@@ -33,24 +33,13 @@ func swish(x float32) float32 {
 
 // ---------------------------------- Matrix Multiply ----------------------------------
 
-var sizes = map[int]int{}
-
 func matmul(dst, m, n []float32, mr, mc, nr, nc int) {
 	for i := 0; i < mr; i++ {
 		y := dst[i*nc : (i+1)*nc]
 		for l, a := range m[i*mc : (i+1)*mc] {
-			sizes[len(y)]++
 			axpy(a, n[l*nc:(l+1)*nc], y)
 		}
 	}
-
-	/*for i := 0; i < mc; i++ {
-		y := dst[i*mr : (i+1)*mr]
-		for l, a := range n[i*nc : (i+1)*nc] {
-			sizes[len(y)]++
-			axpy(a, m[l*mr:(l+1)*mr], y)
-		}
-	}*/
 }
 
 // axpy function, this doesn't use any SIMD as it seems like this version

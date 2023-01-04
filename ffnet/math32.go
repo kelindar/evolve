@@ -60,6 +60,7 @@ type matrix struct {
 	Cols int
 }
 
+// newDense creates a new dense matrix
 func newDense(r, c int, data []float32) matrix {
 	if r <= 0 || c <= 0 {
 		if r == 0 || c == 0 {
@@ -83,6 +84,7 @@ func newDense(r, c int, data []float32) matrix {
 	}
 }
 
+// Reset resets the matrix to zero and grows it if necessary
 func (m *matrix) Reset(rows, cols int) {
 	m.Rows = rows
 	m.Cols = cols
@@ -95,11 +97,7 @@ func (m *matrix) Reset(rows, cols int) {
 
 	// compiles to runtime.memclrNoHeapPointers
 	m.Data = m.Data[:size]
-	/*for i := range m.Data {
-		m.Data[i] = 0 // cleanup
-	}*/
-
-	for i := 0; i < len(m.Data); i++ {
+	for i := range m.Data {
 		m.Data[i] = 0 // cleanup
 	}
 }

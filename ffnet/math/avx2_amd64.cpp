@@ -29,10 +29,5 @@ extern "C" void f32_matmul(float *output, float *m, float *n,
             f32_axpy(n + k*nc, output + i*nc, nc, m[i*mc+k]);
         }
     }
-    /*for (uint64_t i = 0; i < nc; i++) {
-        for (uint64_t k = 0; k < mc; k++) {
-            f32_axpy(m + k*mr, output + i*mr, mr, n[i*nc+k]);
-        }
-    }*/
 }
 

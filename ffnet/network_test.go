@@ -50,13 +50,13 @@ func BenchmarkEvolve(b *testing.B) {
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkDeep-8   	      74	  16630714 ns/op	      13 B/op	       0 allocs/op
+BenchmarkDeep-8   	     510	   2153739 ns/op	       2 B/op	       0 allocs/op
 */
 func BenchmarkDeep(b *testing.B) {
 	const layers = 512
 	shape := make([]int, 0, layers)
 	shape = append(shape, 10)
-	for i := 0; i < layers-2; i++ {
+	for i := 0; i < layers; i++ {
 		shape = append(shape, 128)
 	}
 	shape = append(shape, 1)
@@ -72,19 +72,19 @@ func BenchmarkDeep(b *testing.B) {
 }
 
 func TestXOR(t *testing.T) {
-	nn := NewFeedForward([]int{3, 2, 1},
-		[]float32{-0.27597702, -0.004559007, 0.92628616, -0.5290589, -1.144069, 0.32015398},
-		[]float32{1.5643033, 3.2390056},
+	nn := NewFeedForward([]int{2, 2, 1},
+		[]float32{-1.4361037, 0.770241, 0.5583277, -1.5698348},
+		[]float32{1.8285279, 1.3325073},
 	)
 
 	tests := []struct {
 		input  []float32
 		output float32
 	}{
-		{input: []float32{1, 0, 0}, output: 0},
-		{input: []float32{1, 0, 1}, output: 1},
-		{input: []float32{1, 1, 0}, output: 1},
-		{input: []float32{1, 1, 1}, output: 0},
+		{input: []float32{0, 0}, output: 0},
+		{input: []float32{0, 1}, output: 1},
+		{input: []float32{1, 0}, output: 1},
+		{input: []float32{1, 1}, output: 0},
 	}
 	for _, tc := range tests {
 		const delta = 0.01

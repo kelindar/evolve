@@ -4,7 +4,7 @@
 package ffnet
 
 import (
-	"fmt"
+	"encoding/json"
 	"math/rand"
 	"sync"
 	"unsafe"
@@ -123,10 +123,8 @@ func (nn *FeedForward) Mutate() {
 }
 
 func (nn *FeedForward) String() string {
-	return fmt.Sprintf("{h=%+v, o=%+v}",
-		nn.weights[0].Data,
-		nn.weights[1].Data,
-	)
+	out, _ := json.MarshalIndent(nn.weights, "", "\t")
+	return string(out)
 }
 
 // crossover calculates a crossover between 2 numbers

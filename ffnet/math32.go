@@ -55,9 +55,9 @@ func axpy(alpha float32, x, y []float32) {
 
 // matrix represents a matrix using the conventional storage scheme.
 type matrix struct {
-	Data []float32
-	Rows int
-	Cols int
+	Data []float32 `json:"data"`
+	Rows int       `json:"rows"`
+	Cols int       `json:"cols"`
 }
 
 // newDense creates a new dense matrix

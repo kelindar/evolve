@@ -16,15 +16,15 @@ var tests = []struct {
 	input  []float32
 	output float32
 }{
-	{input: []float32{1, 0, 0}, output: 0},
-	{input: []float32{1, 0, 1}, output: 1},
-	{input: []float32{1, 1, 0}, output: 1},
-	{input: []float32{1, 1, 1}, output: 0},
+	{input: []float32{0, 0}, output: 0},
+	{input: []float32{0, 1}, output: 1},
+	{input: []float32{1, 0}, output: 1},
+	{input: []float32{1, 1}, output: 0},
 }
 
 func main() {
 	pop := evolve.New(256, evaluateXOR, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward([]int{3, 2, 1})
+		return ffnet.NewFeedForward([]int{2, 2, 1})
 	})
 
 	for i := 0; ; i++ { // loop forever

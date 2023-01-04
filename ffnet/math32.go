@@ -31,6 +31,37 @@ func swish(x float32) float32 {
 	return x / r
 }
 
+// ---------------------------------- Matrix Multiply ----------------------------------
+
+var sizes = map[int]int{}
+
+func matmul(dst, m, n []float32, mr, mc, nr, nc int) {
+	for i := 0; i < mr; i++ {
+		y := dst[i*nc : (i+1)*nc]
+		for l, a := range m[i*mc : (i+1)*mc] {
+			sizes[len(y)]++
+			axpy(a, n[l*nc:(l+1)*nc], y)
+		}
+	}
+
+	/*for i := 0; i < mc; i++ {
+		y := dst[i*mr : (i+1)*mr]
+		for l, a := range n[i*nc : (i+1)*nc] {
+			sizes[len(y)]++
+			axpy(a, m[l*mr:(l+1)*mr], y)
+		}
+	}*/
+}
+
+// axpy function, this doesn't use any SIMD as it seems like this version
+// is actually faster than blas32 one from gonum
+func axpy(alpha float32, x, y []float32) {
+	_ = y[len(x)-1] // remove bounds checks
+	for i, v := range x {
+		y[i] += alpha * v
+	}
+}
+
 // ---------------------------------- Matrix ----------------------------------
 
 // matrix represents a matrix using the conventional storage scheme.
@@ -85,7 +116,7 @@ func (m *matrix) Reset(rows, cols int) {
 }
 
 // randomly generate a float64 array
-func randomArray(size int, v float64) (data []float32) {
+func randArr(size int, v float64) (data []float32) {
 	dist := distuv.Uniform{
 		Min: -1 / math.Sqrt(v),
 		Max: +1 / math.Sqrt(v),

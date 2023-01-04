@@ -3,9 +3,40 @@ package ffnet
 import (
 	"math"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
+
+/*
+cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
+BenchmarkAXPY/std-8         	168842340	         7.228 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAXPY/asm-8         	189254059	         6.233 ns/op	       0 B/op	       0 allocs/op
+*/
+func BenchmarkAXPY(b *testing.B) {
+	x := []float32{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+	y := []float32{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
+
+	b.Run("std", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			axpyRef(x, y, 3)
+		}
+	})
+
+	b.Run("asm", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_f32_axpy(
+				unsafe.Pointer(&x[0]),
+				unsafe.Pointer(&y[0]),
+				4, 3.0,
+			)
+		}
+	})
+}
 
 func TestApproxSwish(t *testing.T) {
 	mae := testApproxSwish(-10, 10)

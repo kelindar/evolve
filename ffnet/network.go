@@ -30,12 +30,12 @@ func NewFeedForward(shape []int, weights ...[]float32) *FeedForward {
 	}
 
 	// Create weight matrices for each layer
-	prevLayerSize := nn.sensorSize
-	for _, hiddenLayerSize := range nn.hiddenSize {
-		nn.weights = append(nn.weights, newDense(hiddenLayerSize, prevLayerSize, randomArray(prevLayerSize*hiddenLayerSize, float64(hiddenLayerSize))))
-		prevLayerSize = hiddenLayerSize
+	layer := nn.sensorSize
+	for _, hidden := range nn.hiddenSize {
+		nn.weights = append(nn.weights, newDense(hidden, layer, randArr(layer*hidden, float64(hidden))))
+		layer = hidden
 	}
-	nn.weights = append(nn.weights, newDense(nn.outputSize, prevLayerSize, randomArray(prevLayerSize*nn.outputSize, float64(prevLayerSize))))
+	nn.weights = append(nn.weights, newDense(nn.outputSize, layer, randArr(layer*nn.outputSize, float64(layer))))
 
 	// Optionally, construct a network from pre-defined values
 	for i := range weights {
@@ -57,7 +57,8 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 
 	// Set the input matrix
 	layer := &matrix{
-		Rows: len(input), Cols: 1,
+		Rows: len(input),
+		Cols: 1,
 		Data: input,
 	}
 
@@ -76,29 +77,30 @@ func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 	dst.Reset(m.Rows, n.Cols)
 
 	// Perform non-transposed matrix mltiply
-	for i := 0; i < m.Rows; i++ {
+	/*for i := 0; i < m.Rows; i++ {
 		y := dst.Data[i : i+n.Cols]
 		for l, a := range m.Data[i : i+m.Cols] {
-			axpy(a, n.Data[l:l+n.Cols], y)
+			//axpy(a, n.Data[l:l+n.Cols], y)
+			x := n.Data[l : l+n.Cols]
+			_f32_axpy(unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]), uint64(len(y)), a)
 		}
-	}
+	}*/
+
+	/*
+		_f32_matmul(
+		unsafe.Pointer(&dst.Data[0]), unsafe.Pointer(&m.Data[0]), unsafe.Pointer(&n.Data[0]),
+		uint64(m.Rows), uint64(m.Cols), uint64(n.Rows), uint64(n.Cols))
+	*/
+
+	matmul(dst.Data, m.Data, n.Data, m.Rows, m.Cols, n.Rows, n.Cols)
 
 	// Apply activation function (inlined Leaky ReLU)
-	for i := 0; i < len(dst.Data); i++ {
-		if x := dst.Data[i]; x < 0 {
+	for i, x := range dst.Data {
+		if x < 0 {
 			dst.Data[i] = 0.01 * x
 		}
 	}
 	return dst
-}
-
-// axpy function, this doesn't use any SIMD as it seems like this version
-// is actually faster than blas32 one from gonum
-func axpy(alpha float32, x, y []float32) {
-	_ = y[len(x)-1] // remove bounds checks
-	for i, v := range x {
-		y[i] += alpha * v
-	}
 }
 
 // Crossover performs crossover between two genomes
@@ -127,7 +129,7 @@ func (nn *FeedForward) Mutate() {
 	for layer := 0; layer < len(nn.weights); layer++ {
 		dst := nn.weights[layer].Data
 		for i := 0; i < len(dst); i++ {
-			if rand.Float64() < rate {
+			if rand.Float64() < rate && dst[i] != 0 {
 				dst[i] = dst[i] + float32(rand.NormFloat64())
 			}
 		}

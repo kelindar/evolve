@@ -86,6 +86,10 @@ func Add(dst, src []float32) {
 	simd.AddFloat32s(dst, dst, src)
 }
 
+func Mul(dst, src []float32) {
+	simd.MulFloat32s(dst, dst, src)
+}
+
 // ---------------------------------- Activations ----------------------------------
 
 func Sigmoid(x []float32) {
@@ -97,6 +101,12 @@ func Sigmoid(x []float32) {
 func Tanh(x []float32) {
 	for i, v := range x {
 		x[i] = 2/(1+float32(math.Exp(-2*float64(v)))) - 1
+	}
+}
+
+func Swish(x []float32) {
+	for i, v := range x {
+		x[i] = v / (1 + float32(math.Exp(-float64(v))))
 	}
 }
 

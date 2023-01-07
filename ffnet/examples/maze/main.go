@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"sync/atomic"
+	"time"
 
 	"github.com/itchyny/maze"
 	"github.com/kelindar/evolve"
@@ -29,7 +30,7 @@ func main() {
 		fitness := evaluateMaze(fittest)
 
 		// Every new population the maze will be different to avoid overfitting
-		seed.Add(1)
+		seed.Store(time.Now().UnixMicro())
 		if fitness >= 95 {
 			solved++
 		}

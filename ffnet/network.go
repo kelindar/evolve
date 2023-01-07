@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"sync"
-	"unsafe"
 
 	"github.com/kelindar/evolve"
 )
@@ -20,7 +19,7 @@ type FeedForward struct {
 	outputSize int
 	weights    []matrix
 	scratch    [2]matrix
-	memory     *GRU
+	memory     []*GRU
 }
 
 // NewFeedForward creates a new NeuralNetwork
@@ -29,16 +28,24 @@ func NewFeedForward(shape []int, weights ...[]float32) *FeedForward {
 		sensorSize: shape[0],
 		hiddenSize: shape[1 : len(shape)-1],
 		outputSize: shape[len(shape)-1],
-		memory:     NewGRU(shape[len(shape)-1], shape[len(shape)-1]),
 	}
 
 	// Create weight matrices for each layer
 	layer := nn.sensorSize
 	for _, hidden := range nn.hiddenSize {
 		nn.weights = append(nn.weights, newDense(layer, hidden, randArr(hidden*layer, float64(hidden))))
+		//nn.memory = append(nn.memory, NewGRU(layer, hidden))
+
 		layer = hidden
 	}
+
 	nn.weights = append(nn.weights, newDense(layer, nn.outputSize, randArr(nn.outputSize*layer, float64(layer))))
+	//nn.memory = append(nn.memory, NewGRU(layer, nn.outputSize))
+
+	// Create a memory layer for each hidden layer
+	for i := 1; i < len(shape); i++ {
+		nn.memory = append(nn.memory, NewGRU(shape[i], shape[i]))
+	}
 
 	// Optionally, construct a network from pre-defined values
 	for i := range weights {
@@ -68,9 +75,8 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 	defer nn.mu.Unlock()
 	for i := range nn.weights {
 		layer = nn.forward(&nn.scratch[i%2], layer, &nn.weights[i])
+		layer.Data = nn.memory[i].Update(layer.Data)
 	}
-
-	layer.Data = nn.memory.Update(layer.Data)
 
 	// Copy the output so we can release the lock
 	copy(output, layer.Data)
@@ -80,9 +86,7 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 // forward performs M·N matrix multiplication and writes the result to dst after applying ReLU
 func (nn *FeedForward) forward(dst, m, n *matrix) *matrix {
 	dst.Reset(m.Rows, n.Cols)
-	_f32_matmul(
-		unsafe.Pointer(&dst.Data[0]), unsafe.Pointer(&m.Data[0]), unsafe.Pointer(&n.Data[0]),
-		uint64(m.Rows), uint64(m.Cols), uint64(n.Rows), uint64(n.Cols))
+	matmul(dst, m, n)
 
 	// Apply activation function (inlined Leaky ReLU)
 	for i, x := range dst.Data {
@@ -101,15 +105,12 @@ func (nn *FeedForward) Crossover(g1, g2 evolve.Genome) {
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
 
-	nn.memory.Crossover(nn1.memory, nn2.memory)
+	for i := range nn.memory {
+		nn.memory[i].Crossover(nn1.memory[i], nn2.memory[i])
+	}
 
 	for layer := 0; layer < len(nn.weights); layer++ {
-		dst := nn.weights[layer].Data
-		mx1 := nn1.weights[layer].Data
-		mx2 := nn2.weights[layer].Data
-		for i := 0; i < len(dst); i++ {
-			dst[i] = crossover(mx1[i], mx2[i])
-		}
+		crossoverVector(nn.weights[layer].Data, nn1.weights[layer].Data, nn2.weights[layer].Data)
 	}
 }
 
@@ -117,9 +118,11 @@ func (nn *FeedForward) Crossover(g1, g2 evolve.Genome) {
 func (nn *FeedForward) Mutate() {
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
-	const rate = 0.02
+	const rate = 0.01
 
-	nn.memory.Mutate()
+	for i := range nn.memory {
+		nn.memory[i].Mutate()
+	}
 
 	for layer := 0; layer < len(nn.weights); layer++ {
 		dst := nn.weights[layer].Data
@@ -136,15 +139,19 @@ func (nn *FeedForward) String() string {
 	return string(out)
 }
 
-// crossover calculates a crossover between 2 numbers
-func crossover(v1, v2 float32) float32 {
-	const delta = 0.10
-	switch {
-	case isNan(v1):
-		return v2
-	case isNan(v2) || v1 == v2:
-		return v1
-	default: // e.g. [5, 10], move by x% towards 10
-		return v1 + ((v2 - v1) * delta)
+func crossoverMatrix(dst, mx1, mx2 *matrix) {
+	crossoverVector(dst.Data, mx1.Data, mx2.Data)
+}
+
+func crossoverVector(dst, v1, v2 []float32) {
+	clear(dst)
+	axpy(v1, dst, .7)
+	axpy(v2, dst, .3)
+}
+
+// clear compiles to runtime.memclrNoHeapPointers
+func clear(data []float32) {
+	for i := range data {
+		data[i] = 0 // cleanup
 	}
 }

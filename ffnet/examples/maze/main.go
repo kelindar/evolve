@@ -19,8 +19,8 @@ var (
 )
 
 func main() {
-	pop := evolve.New(128, evaluateMaze, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward([]int{4, 4096, 4})
+	pop := evolve.New(256, evaluateMaze, func() *ffnet.FeedForward {
+		return ffnet.NewFeedForward([]int{4, 8, 8, 8, 4})
 	})
 
 	for i := 0; ; i++ { // loop forever
@@ -42,7 +42,7 @@ func main() {
 
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
-			if success > 95 {
+			if success > 90 {
 				width += 1
 				height += 1
 			}

@@ -108,7 +108,7 @@ func (p *Population[T]) pickParents() (T, T) {
 
 // pickMate selects a parent from the population using a tournament selection.
 func (p *Population[T]) pickMate() (bestEvolver T, bestFitness float32) {
-	const tournamentSize = 4
+	const tournamentSize = 3
 	for r := 0; r < tournamentSize; r++ {
 		i := p.rand.Int31n(int32(len(p.genomes)))
 		if f := p.fitnessOf[i]; f >= bestFitness || bestFitness == 0 {

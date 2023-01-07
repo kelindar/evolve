@@ -40,19 +40,19 @@ func (gru *GRU) Update(x []float32) []float32 {
 	hr := make([]float32, gru.hiddenSize)
 	hz := make([]float32, gru.hiddenSize)
 
-	matmul(hr, gru.h, gru.Whr.Data, 1, gru.hiddenSize, gru.Whr.Rows, gru.Whr.Cols)
-	matmul(hr, x, gru.Wxr.Data, 1, len(x), gru.Wxr.Rows, gru.Wxr.Cols)
+	_matmul(hr, gru.h, gru.Whr.Data, 1, gru.hiddenSize, gru.Whr.Rows, gru.Whr.Cols)
+	_matmul(hr, x, gru.Wxr.Data, 1, len(x), gru.Wxr.Rows, gru.Wxr.Cols)
 	add(hr, gru.Br)
 	sigmoid(hr)
 
-	matmul(hz, gru.h, gru.Whz.Data, 1, gru.hiddenSize, gru.Whz.Rows, gru.Whz.Cols)
-	matmul(hz, x, gru.Wxz.Data, 1, len(x), gru.Wxz.Rows, gru.Wxz.Cols)
+	_matmul(hz, gru.h, gru.Whz.Data, 1, gru.hiddenSize, gru.Whz.Rows, gru.Whz.Cols)
+	_matmul(hz, x, gru.Wxz.Data, 1, len(x), gru.Wxz.Rows, gru.Wxz.Cols)
 	add(hz, gru.Bz)
 	sigmoid(hz)
 
 	hh := make([]float32, gru.hiddenSize)
-	matmul(hh, gru.h, gru.Whh.Data, 1, gru.hiddenSize, gru.Whh.Rows, gru.Whh.Cols)
-	matmul(hh, x, gru.Wxh.Data, 1, len(x), gru.Wxh.Rows, gru.Wxh.Cols)
+	_matmul(hh, gru.h, gru.Whh.Data, 1, gru.hiddenSize, gru.Whh.Rows, gru.Whh.Cols)
+	_matmul(hh, x, gru.Wxh.Data, 1, len(x), gru.Wxh.Rows, gru.Wxh.Cols)
 	add(hh, hh)
 	tanh(hh)
 
@@ -80,7 +80,7 @@ func (gru *GRU) Crossover(g1, g2 evolve.Genome) {
 
 // Mutate mutates the genome
 func (gru *GRU) Mutate() {
-	const rate = 0.02
+	const rate = 0.01
 
 	mutateMatrix(&gru.Wxr, rate)
 	mutateMatrix(&gru.Wxz, rate)
@@ -90,18 +90,6 @@ func (gru *GRU) Mutate() {
 	mutateMatrix(&gru.Whh, rate)
 	mutateVector(gru.Br, rate)
 	mutateVector(gru.Bz, rate)
-}
-
-func crossoverMatrix(dst, mx1, mx2 *matrix) {
-	for i, v := range mx1.Data {
-		dst.Data[i] = crossover(v, mx2.Data[i])
-	}
-}
-
-func crossoverVector(dst, v1, v2 []float32) {
-	for i, v := range v1 {
-		dst[i] = crossover(v, v2[i])
-	}
 }
 
 func mutateMatrix(mx *matrix, rate float64) {

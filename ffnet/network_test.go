@@ -111,7 +111,7 @@ func TestGenericMatmul(t *testing.T) {
 	y := []float32{5, 6, 7, 8}
 	o := make([]float32, 4)
 
-	matmul(o, x, y, 2, 2, 2, 2)
+	_matmul(o, x, y, 2, 2, 2, 2)
 	assert.Equal(t, []float32{19, 22, 43, 50}, o)
 }
 

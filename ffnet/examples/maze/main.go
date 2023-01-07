@@ -19,37 +19,40 @@ var (
 )
 
 func main() {
-	pop := evolve.New(256, evaluateMaze, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward([]int{4, 8, 8, 8, 4})
+	pop := evolve.New(128, evaluateMaze, func() *ffnet.FeedForward {
+		return ffnet.NewFeedForward([]int{4, 8, 8, 4})
 	})
 
-	for i := 0; ; i++ { // loop forever
+	for i := 1; ; i++ { // loop forever
 		fittest := pop.Evolve()
 		fitness := evaluateMaze(fittest)
-		success := float64(seed.Load()) / float64(i) * 100
 
 		// If we solved the maze, change the shape
-		if fitness == 100 {
+		if fitness >= 95 {
 			seed.Add(1)
 		}
 
 		// Every 1000 generations, reset and print out
 		if i%1000 == 0 {
+			success := float64(seed.Load()) / 1000.0 * 100
+
 			m := createMaze(int(seed.Load()))
 			m.Print(os.Stdout, maze.Color)
 			fmt.Printf("[#%.2d] best score = %.2f%%, success rate = %.2f%%\n", i, fitness, success)
-			///fmt.Println(fittest.String())
 
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
-			if success > 90 {
+			switch {
+			case success > 90:
 				width += 1
 				height += 1
+			case success < 1:
+				width -= 1
+				height -= 1
 			}
 
 			// Reset the generation
 			seed.Store(0)
-			i = 0
 		}
 	}
 }
@@ -59,11 +62,8 @@ func evaluateMaze(g *ffnet.FeedForward) (score float32) {
 	sensor := make([]float32, 4)
 	output := make([]float32, 4)
 
-	var exploration float32
-	for score = 100; score > 0; score -= 1 {
-		exploration += sense(m, sensor)
-
-		out := g.Predict(sensor, output)
+	for n := 100; n > 0 && !m.Finished; n-- {
+		out := g.Predict(sense(m, sensor), output)
 		switch actionOf(out) {
 		case 0:
 			m.Move(maze.Up)
@@ -75,13 +75,23 @@ func evaluateMaze(g *ffnet.FeedForward) (score float32) {
 			m.Move(maze.Right)
 		}
 
+		// Reward more for shorter solutions
 		if m.Finished {
-			return 100
+			return 95 + (5 * float32(n) / 100)
 		}
 	}
 
-	score += float32(exploration)
-	return
+	// This part rewards exploration of the maze by counting the visited cells
+	visited := (maze.Up | maze.Down | maze.Left | maze.Right) << maze.VisitedOffset
+	for x := range m.Directions {
+		for y := range m.Directions[x] {
+			if m.Directions[x][y] == visited {
+				score += .1 // bonus points for exploration
+			}
+		}
+	}
+
+	return 0
 }
 
 func createMaze(seed int) *maze.Maze {
@@ -95,16 +105,15 @@ func createMaze(seed int) *maze.Maze {
 }
 
 // sense goes through all neighbors and sets to 1 if the path is available
-func sense(m *maze.Maze, vector []float32) (score float32) {
+func sense(m *maze.Maze, vector []float32) (score []float32) {
 	for i, direction := range maze.Directions {
 		point := m.Cursor
 		next := point.Advance(direction)
 		if m.Contains(next) && m.Directions[point.X][point.Y]&direction == direction {
 			vector[i] = 1.0
-			//score += 0.2
 		}
 	}
-	return score
+	return vector
 }
 
 // actionOf returns the best action to take (max value)

@@ -2,7 +2,6 @@ package ffnet
 
 import (
 	"math"
-	"math/rand"
 
 	"github.com/kelindar/evolve"
 	"github.com/kelindar/simd"
@@ -15,7 +14,8 @@ import (
 type GRU struct {
 	Wxr, Wxz, Wxh,
 	Whr, Whz, Whh matrix
-	Br, Bz, h  []float32
+	Br, Bz     []float32
+	h          matrix
 	hiddenSize int
 }
 
@@ -30,37 +30,38 @@ func NewGRU(inputSize, hiddenSize int) *GRU {
 		Whh:        newDense(hiddenSize, hiddenSize, randArr(hiddenSize*hiddenSize, float64(hiddenSize))),
 		Br:         randArr(hiddenSize, float64(hiddenSize)),
 		Bz:         randArr(hiddenSize, float64(hiddenSize)),
-		h:          make([]float32, hiddenSize),
+		h:          newDense(1, hiddenSize, nil),
 		hiddenSize: hiddenSize,
 	}
 }
 
 // Update updates the GRU layer
 func (gru *GRU) Update(x []float32) []float32 {
-	hr := make([]float32, gru.hiddenSize)
-	hz := make([]float32, gru.hiddenSize)
+	input := newDense(1, len(x), x)
+	hr := newDense(1, gru.hiddenSize, nil)
+	hz := newDense(1, gru.hiddenSize, nil)
+	hh := newDense(1, gru.hiddenSize, nil)
 
-	_matmul(hr, gru.h, gru.Whr.Data, 1, gru.hiddenSize, gru.Whr.Rows, gru.Whr.Cols)
-	_matmul(hr, x, gru.Wxr.Data, 1, len(x), gru.Wxr.Rows, gru.Wxr.Cols)
-	add(hr, gru.Br)
-	sigmoid(hr)
+	matmul(&hr, &gru.h, &gru.Whr)
+	matmul(&hr, &input, &gru.Wxr)
+	add(hr.Data, gru.Br)
+	sigmoid(hr.Data)
 
-	_matmul(hz, gru.h, gru.Whz.Data, 1, gru.hiddenSize, gru.Whz.Rows, gru.Whz.Cols)
-	_matmul(hz, x, gru.Wxz.Data, 1, len(x), gru.Wxz.Rows, gru.Wxz.Cols)
-	add(hz, gru.Bz)
-	sigmoid(hz)
+	matmul(&hz, &gru.h, &gru.Whz)
+	matmul(&hz, &input, &gru.Wxz)
+	add(hz.Data, gru.Bz)
+	sigmoid(hz.Data)
 
-	hh := make([]float32, gru.hiddenSize)
-	_matmul(hh, gru.h, gru.Whh.Data, 1, gru.hiddenSize, gru.Whh.Rows, gru.Whh.Cols)
-	_matmul(hh, x, gru.Wxh.Data, 1, len(x), gru.Wxh.Rows, gru.Wxh.Cols)
-	add(hh, hh)
-	tanh(hh)
+	matmul(&hh, &gru.h, &gru.Whh)
+	matmul(&hh, &input, &gru.Wxh)
+	add(hh.Data, hh.Data)
+	tanh(hh.Data)
 
-	for i, v := range hr {
-		hh[i] = hh[i]*v + gru.h[i]*(1-v)
+	for i, v := range hr.Data {
+		hh.Data[i] = hh.Data[i]*v + gru.h.Data[i]*(1-v)
 	}
 	gru.h = hh
-	return hh
+	return hh.Data
 }
 
 // Crossover performs crossover between two genomes
@@ -80,39 +81,18 @@ func (gru *GRU) Crossover(g1, g2 evolve.Genome) {
 
 // Mutate mutates the genome
 func (gru *GRU) Mutate() {
-	const rate = 0.01
-
-	mutateMatrix(&gru.Wxr, rate)
-	mutateMatrix(&gru.Wxz, rate)
-	mutateMatrix(&gru.Wxh, rate)
-	mutateMatrix(&gru.Whr, rate)
-	mutateMatrix(&gru.Whz, rate)
-	mutateMatrix(&gru.Whh, rate)
-	mutateVector(gru.Br, rate)
-	mutateVector(gru.Bz, rate)
-}
-
-func mutateMatrix(mx *matrix, rate float64) {
-	for i, v := range mx.Data {
-		if rand.Float64() < rate && v != 0 {
-			mx.Data[i] = v + float32(rand.NormFloat64())
-		}
-	}
-}
-
-func mutateVector(v []float32, rate float64) {
-	for i, x := range v {
-		if rand.Float64() < rate && x != 0 {
-			v[i] = x + float32(rand.NormFloat64())
-		}
-	}
+	mutateVector(gru.Wxr.Data)
+	mutateVector(gru.Wxz.Data)
+	mutateVector(gru.Wxh.Data)
+	mutateVector(gru.Whr.Data)
+	mutateVector(gru.Whz.Data)
+	mutateVector(gru.Whh.Data)
+	mutateVector(gru.Br)
+	mutateVector(gru.Bz)
 }
 
 func add(dst, src []float32) {
 	simd.AddFloat32s(dst, dst, src)
-	/*for i, v := range src {
-		dst[i] += v
-	}*/
 }
 
 func sigmoid(x []float32) {

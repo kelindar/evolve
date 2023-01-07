@@ -125,12 +125,7 @@ func (nn *FeedForward) Mutate() {
 	}
 
 	for layer := 0; layer < len(nn.weights); layer++ {
-		dst := nn.weights[layer].Data
-		for i := 0; i < len(dst); i++ {
-			if rand.Float64() < rate && dst[i] != 0 {
-				dst[i] = dst[i] + float32(rand.NormFloat64())
-			}
-		}
+		mutateVector(nn.weights[layer].Data)
 	}
 }
 
@@ -145,8 +140,17 @@ func crossoverMatrix(dst, mx1, mx2 *matrix) {
 
 func crossoverVector(dst, v1, v2 []float32) {
 	clear(dst)
-	axpy(v1, dst, .7)
-	axpy(v2, dst, .3)
+	axpy(v1, dst, .75)
+	axpy(v2, dst, .25)
+}
+
+func mutateVector(v []float32) {
+	const rate = 0.001
+	for i, x := range v {
+		if rand.Float64() < rate {
+			v[i] = x + float32(rand.NormFloat64())
+		}
+	}
 }
 
 // clear compiles to runtime.memclrNoHeapPointers

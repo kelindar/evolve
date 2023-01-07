@@ -19,23 +19,24 @@ var (
 )
 
 func main() {
-	pop := evolve.New(128, evaluateMaze, func() *ffnet.Network {
-		return ffnet.NewFeedForward([]int{4, 16, 16, 16, 4})
+	pop := evolve.New(256, evaluateMaze, func() *ffnet.Network {
+		return ffnet.NewFeedForward([]int{4, 8, 64, 8, 4})
 	})
 
+	var solved float64
 	for i := 1; ; i++ { // loop forever
 		fittest := pop.Evolve()
 		fitness := evaluateMaze(fittest)
 
-		// If we solved the maze, change the shape
+		// Every new population the maze will be different to avoid overfitting
+		seed.Add(1)
 		if fitness >= 95 {
-			seed.Add(1)
+			solved++
 		}
 
 		// Every 100 generations, reset and print out
 		if i%100 == 0 {
-			success := float64(seed.Load()) / 100.0 * 100
-
+			success := solved / 100.0 * 100
 			m := createMaze(int(seed.Load()))
 			m.Print(os.Stdout, maze.Color)
 			fmt.Printf("[#%.2d] best score = %.2f%%, success rate = %.2f%%\n", i, fitness, success)
@@ -46,13 +47,14 @@ func main() {
 			case success > 90:
 				width += 1
 				height += 1
-				/*case success < 1:
+			case success < 1:
 				width -= 1
-				height -= 1*/
+				height -= 1
 			}
 
 			// Reset the generation
 			seed.Store(0)
+			solved = 0
 		}
 	}
 }
@@ -80,7 +82,8 @@ func evaluateMaze(g *ffnet.Network) (score float32) {
 
 		// Reward more for shorter solutions
 		if m.Finished {
-			return 90 + (10 * float32(n) / 100)
+			// return 90 + (10 * float32(n) / 100)
+			return 100
 		}
 	}
 

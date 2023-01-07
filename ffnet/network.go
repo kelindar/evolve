@@ -42,7 +42,7 @@ func NewFeedForward(shape []int, weights ...[]float32) *Network {
 	// Create weight matrices for each prev
 	prev := nn.sensorSize
 	for _, hidden := range nn.hiddenSize {
-		nn.layers = append(nn.layers, layer.NewFFN(prev, hidden))
+		nn.layers = append(nn.layers, layer.NewRNN(prev, hidden))
 		prev = hidden
 	}
 

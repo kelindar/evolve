@@ -159,6 +159,11 @@ func (m *Matrix) Reset(rows, cols int) {
 
 	// compiles to runtime.memclrNoHeapPointers
 	m.Data = m.Data[:size]
+	m.Zero()
+}
+
+// Zero zeroes the matrix data, but does not change its shape
+func (m *Matrix) Zero() {
 	Clear(m.Data)
 }
 

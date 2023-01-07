@@ -5,6 +5,7 @@ package evolve
 
 import (
 	"math/rand"
+	"runtime"
 	"sync"
 )
 
@@ -62,10 +63,12 @@ func (p *Population[T]) Evolve() (fittest T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	// Evaluate the fitness and cache it
+	// Parallelize the fitness evaluation
+	p.evaluate(runtime.NumCPU())
+
+	// Find the fittest genome
 	best := float32(0)
-	for i, v := range p.genomes {
-		p.fitnessOf[i] = p.fitnessFn(v)
+	for i := range p.genomes {
 		if fitness := p.fitnessOf[i]; fitness >= best {
 			fittest = p.genomes[i]
 			best = fitness
@@ -114,4 +117,31 @@ func (p *Population[T]) pickMate() (bestEvolver T, bestFitness float32) {
 		}
 	}
 	return
+}
+
+// evaluate evaluates the population in parallel
+func (p *Population[T]) evaluate(parallelism int) {
+	chunkSize := len(p.genomes) / parallelism
+	var wg sync.WaitGroup
+	wg.Add(parallelism)
+
+	// launch a Goroutine for each chunk
+	for i := 0; i < parallelism; i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+		if i == parallelism-1 {
+			end = len(p.genomes)
+		}
+
+		go func(start, end int) {
+			for j := start; j < end; j++ {
+				v := p.genomes[j]
+				fitness := p.fitnessFn(v)
+				p.fitnessOf[j] = fitness
+			}
+			wg.Done()
+		}(start, end)
+	}
+
+	wg.Wait()
 }

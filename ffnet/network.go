@@ -20,6 +20,7 @@ type FeedForward struct {
 	outputSize int
 	weights    []matrix
 	scratch    [2]matrix
+	memory     *GRU
 }
 
 // NewFeedForward creates a new NeuralNetwork
@@ -28,6 +29,7 @@ func NewFeedForward(shape []int, weights ...[]float32) *FeedForward {
 		sensorSize: shape[0],
 		hiddenSize: shape[1 : len(shape)-1],
 		outputSize: shape[len(shape)-1],
+		memory:     NewGRU(shape[len(shape)-1], shape[len(shape)-1]),
 	}
 
 	// Create weight matrices for each layer
@@ -68,6 +70,8 @@ func (nn *FeedForward) Predict(input, output []float32) []float32 {
 		layer = nn.forward(&nn.scratch[i%2], layer, &nn.weights[i])
 	}
 
+	layer.Data = nn.memory.Update(layer.Data)
+
 	// Copy the output so we can release the lock
 	copy(output, layer.Data)
 	return output
@@ -96,6 +100,9 @@ func (nn *FeedForward) Crossover(g1, g2 evolve.Genome) {
 
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
+
+	nn.memory.Crossover(nn1.memory, nn2.memory)
+
 	for layer := 0; layer < len(nn.weights); layer++ {
 		dst := nn.weights[layer].Data
 		mx1 := nn1.weights[layer].Data
@@ -111,6 +118,8 @@ func (nn *FeedForward) Mutate() {
 	nn.mu.Lock()
 	defer nn.mu.Unlock()
 	const rate = 0.02
+
+	nn.memory.Mutate()
 
 	for layer := 0; layer < len(nn.weights); layer++ {
 		dst := nn.weights[layer].Data

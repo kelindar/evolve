@@ -34,11 +34,11 @@ func BenchmarkPredict(b *testing.B) {
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkEvolve-8   	   25706	     46466 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvolve-8   	      16	  67508825 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkEvolve(b *testing.B) {
 	pop := evolve.New(256, func(*FeedForward) float32 { return 0 }, func() *FeedForward {
-		return NewFeedForward([]int{3, 2, 1})
+		return NewFeedForward([]int{3, 128, 128, 1})
 	})
 
 	b.ReportAllocs()
@@ -50,7 +50,7 @@ func BenchmarkEvolve(b *testing.B) {
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkDeep-8   	     510	   2153739 ns/op	       2 B/op	       0 allocs/op
+BenchmarkDeep-8   	     270	   4218243 ns/op	       3 B/op	       0 allocs/op
 */
 func BenchmarkDeep(b *testing.B) {
 	const layers = 512

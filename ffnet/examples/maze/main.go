@@ -19,8 +19,8 @@ var (
 )
 
 func main() {
-	pop := evolve.New(128, evaluateMaze, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward([]int{4, 8, 8, 4})
+	pop := evolve.New(128, evaluateMaze, func() *ffnet.Network {
+		return ffnet.NewFeedForward([]int{4, 16, 16, 16, 4})
 	})
 
 	for i := 1; ; i++ { // loop forever
@@ -32,9 +32,9 @@ func main() {
 			seed.Add(1)
 		}
 
-		// Every 1000 generations, reset and print out
-		if i%1000 == 0 {
-			success := float64(seed.Load()) / 1000.0 * 100
+		// Every 100 generations, reset and print out
+		if i%100 == 0 {
+			success := float64(seed.Load()) / 100.0 * 100
 
 			m := createMaze(int(seed.Load()))
 			m.Print(os.Stdout, maze.Color)
@@ -46,9 +46,9 @@ func main() {
 			case success > 90:
 				width += 1
 				height += 1
-			case success < 1:
+				/*case success < 1:
 				width -= 1
-				height -= 1
+				height -= 1*/
 			}
 
 			// Reset the generation
@@ -57,10 +57,13 @@ func main() {
 	}
 }
 
-func evaluateMaze(g *ffnet.FeedForward) (score float32) {
+func evaluateMaze(g *ffnet.Network) (score float32) {
 	m := createMaze(int(seed.Load()))
 	sensor := make([]float32, 4)
 	output := make([]float32, 4)
+
+	// Clear the memory
+	g.Reset()
 
 	for n := 100; n > 0 && !m.Finished; n-- {
 		out := g.Predict(sense(m, sensor), output)
@@ -77,7 +80,7 @@ func evaluateMaze(g *ffnet.FeedForward) (score float32) {
 
 		// Reward more for shorter solutions
 		if m.Finished {
-			return 95 + (5 * float32(n) / 100)
+			return 90 + (10 * float32(n) / 100)
 		}
 	}
 
@@ -86,7 +89,7 @@ func evaluateMaze(g *ffnet.FeedForward) (score float32) {
 	for x := range m.Directions {
 		for y := range m.Directions[x] {
 			if m.Directions[x][y] == visited {
-				score += .1 // bonus points for exploration
+				score += .5 // bonus points for exploration
 			}
 		}
 	}

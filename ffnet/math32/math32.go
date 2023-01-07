@@ -1,10 +1,11 @@
-package ffnet
+package math32
 
 import (
 	"errors"
 	"math"
 	"unsafe"
 
+	"github.com/kelindar/simd"
 	"github.com/klauspost/cpuid/v2"
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -39,8 +40,8 @@ func swish(x float32) float32 {
 
 // ---------------------------------- Matrix Multiply ----------------------------------
 
-// matmul multiplies matrix M by N and writes the result into dst
-func matmul(dst, m, n *matrix) {
+// Matmul multiplies matrix M by N and writes the result into dst
+func Matmul(dst, m, n *Matrix) {
 	switch {
 	case avx2:
 		_f32_matmul(
@@ -51,8 +52,8 @@ func matmul(dst, m, n *matrix) {
 	}
 }
 
-// axpy function (y = ax + y)
-func axpy(x, y []float32, alpha float32) {
+// Axpy function (y = ax + y)
+func Axpy(x, y []float32, alpha float32) {
 	switch {
 	case avx2:
 		_f32_axpy(unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]), uint64(len(y)), alpha)
@@ -79,17 +80,45 @@ func _axpy(x, y []float32, alpha float32) {
 	}
 }
 
+// ---------------------------------- SIMD ----------------------------------
+
+func Add(dst, src []float32) {
+	simd.AddFloat32s(dst, dst, src)
+}
+
+// ---------------------------------- Activations ----------------------------------
+
+func Sigmoid(x []float32) {
+	for i, v := range x {
+		x[i] = 1 / (1 + float32(math.Exp(-float64(v))))
+	}
+}
+
+func Tanh(x []float32) {
+	for i, v := range x {
+		x[i] = 2/(1+float32(math.Exp(-2*float64(v)))) - 1
+	}
+}
+
+func Lrelu(x []float32) {
+	for i, v := range x {
+		if v < 0 {
+			x[i] = 0.01 * v
+		}
+	}
+}
+
 // ---------------------------------- Matrix ----------------------------------
 
-// matrix represents a matrix using the conventional storage scheme.
-type matrix struct {
+// Matrix represents a Matrix using the conventional storage scheme.
+type Matrix struct {
 	Data []float32 `json:"data"`
 	Rows int       `json:"rows"`
 	Cols int       `json:"cols"`
 }
 
-// newDense creates a new dense matrix
-func newDense(r, c int, data []float32) matrix {
+// NewDense creates a new dense matrix
+func NewDense(r, c int, data []float32) Matrix {
 	if r <= 0 || c <= 0 {
 		if r == 0 || c == 0 {
 			panic(errZeroLength)
@@ -105,15 +134,20 @@ func newDense(r, c int, data []float32) matrix {
 		data = make([]float32, r*c)
 	}
 
-	return matrix{
+	return Matrix{
 		Rows: r,
 		Cols: c,
 		Data: data,
 	}
 }
 
+// NewDenseRandom creates a new dense matrix with randomly initialized values
+func NewDenseRandom(r, c int) Matrix {
+	return NewDense(r, c, randArr(r*c, float64(c)))
+}
+
 // Reset resets the matrix to zero and grows it if necessary
-func (m *matrix) Reset(rows, cols int) {
+func (m *Matrix) Reset(rows, cols int) {
 	m.Rows = rows
 	m.Cols = cols
 
@@ -125,9 +159,7 @@ func (m *matrix) Reset(rows, cols int) {
 
 	// compiles to runtime.memclrNoHeapPointers
 	m.Data = m.Data[:size]
-	for i := range m.Data {
-		m.Data[i] = 0 // cleanup
-	}
+	Clear(m.Data)
 }
 
 // randomly generate a float64 array
@@ -142,4 +174,11 @@ func randArr(size int, v float64) (data []float32) {
 		data[i] = float32(dist.Rand())
 	}
 	return
+}
+
+// Clear compiles to runtime.memclrNoHeapPointers
+func Clear(data []float32) {
+	for i := range data {
+		data[i] = 0 // cleanup
+	}
 }

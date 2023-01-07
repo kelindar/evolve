@@ -3,7 +3,6 @@ package ffnet
 import (
 	"fmt"
 	"testing"
-	"unsafe"
 
 	"github.com/kelindar/evolve"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +36,7 @@ cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
 BenchmarkEvolve-8   	      16	  67508825 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkEvolve(b *testing.B) {
-	pop := evolve.New(256, func(*FeedForward) float32 { return 0 }, func() *FeedForward {
+	pop := evolve.New(256, func(*Network) float32 { return 0 }, func() *Network {
 		return NewFeedForward([]int{3, 128, 128, 1})
 	})
 
@@ -91,50 +90,5 @@ func TestXOR(t *testing.T) {
 		out := nn.Predict(tc.input, nil)
 		assert.Equal(t, 1, len(out))
 		assert.InDelta(t, tc.output, out[0], delta)
-	}
-}
-
-func TestAsmMatmul(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{5, 6, 7, 8}
-	o := make([]float32, 4)
-
-	_f32_matmul(
-		unsafe.Pointer(&o[0]), unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]),
-		2, 2, 2, 2)
-
-	assert.Equal(t, []float32{19, 22, 43, 50}, o)
-}
-
-func TestGenericMatmul(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{5, 6, 7, 8}
-	o := make([]float32, 4)
-
-	_matmul(o, x, y, 2, 2, 2, 2)
-	assert.Equal(t, []float32{19, 22, 43, 50}, o)
-}
-
-func TestAXPY(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{1, 1, 1, 1}
-
-	_f32_axpy(
-		unsafe.Pointer(&x[0]),
-		unsafe.Pointer(&y[0]),
-		4, 2,
-	)
-
-	_ = x[0]
-	_ = y[0]
-	assert.Equal(t, []float32{3, 5, 7, 9}, y)
-}
-
-// axpyRef function, this doesn't use any SIMD as it seems like this version
-// is actually faster than blas32 one from gonum
-func axpyRef(x, y []float32, alpha float32) {
-	_ = y[len(x)-1] // remove bounds checks
-	for i, v := range x {
-		y[i] += alpha * v
 	}
 }

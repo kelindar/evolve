@@ -1,4 +1,4 @@
-package ffnet
+package math32
 
 import (
 	"math"
@@ -61,4 +61,49 @@ func testApproxSwish(start, end float32) float64 {
 
 func referenceSwish(x float32) float32 {
 	return x / (1.0 + float32(math.Exp(float64(-x))))
+}
+
+func TestAsmMatmul(t *testing.T) {
+	x := []float32{1, 2, 3, 4}
+	y := []float32{5, 6, 7, 8}
+	o := make([]float32, 4)
+
+	_f32_matmul(
+		unsafe.Pointer(&o[0]), unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]),
+		2, 2, 2, 2)
+
+	assert.Equal(t, []float32{19, 22, 43, 50}, o)
+}
+
+func TestGenericMatmul(t *testing.T) {
+	x := []float32{1, 2, 3, 4}
+	y := []float32{5, 6, 7, 8}
+	o := make([]float32, 4)
+
+	_matmul(o, x, y, 2, 2, 2, 2)
+	assert.Equal(t, []float32{19, 22, 43, 50}, o)
+}
+
+func TestAXPY(t *testing.T) {
+	x := []float32{1, 2, 3, 4}
+	y := []float32{1, 1, 1, 1}
+
+	_f32_axpy(
+		unsafe.Pointer(&x[0]),
+		unsafe.Pointer(&y[0]),
+		4, 2,
+	)
+
+	_ = x[0]
+	_ = y[0]
+	assert.Equal(t, []float32{3, 5, 7, 9}, y)
+}
+
+// axpyRef function, this doesn't use any SIMD as it seems like this version
+// is actually faster than blas32 one from gonum
+func axpyRef(x, y []float32, alpha float32) {
+	_ = y[len(x)-1] // remove bounds checks
+	for i, v := range x {
+		y[i] += alpha * v
+	}
 }

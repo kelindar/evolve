@@ -1,10 +1,9 @@
-package ffnet
+package layer
 
+/*
 import (
-	"math"
-
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/simd"
+	"github.com/kelindar/evolve/ffnet/math32"
 )
 
 // GRU is an implementation of a gated recurrent unit. This implementation follows the approach
@@ -12,45 +11,46 @@ import (
 // paper by Joel Heck and Fathi M. Salem. The paper proposes a simplified version of GRUs that
 // uses minimal gated units, which are a combination of a sigmoid unit and a tanh unit.
 type GRU struct {
-	Wxr, Wxz, Wxh,
-	Whr, Whz, Whh matrix
+	Wxr, Wxh,
+	Whr, Whh math32.Matrix
 	Br, Bz     []float32
-	h          matrix
+	h          math32.Matrix
+	scratch    [2]math32.Matrix
 	hiddenSize int
 }
 
 // NewGRU creates a new GRU layer
 func NewGRU(inputSize, hiddenSize int) *GRU {
-	return &GRU{
-		Wxr:        newDense(hiddenSize, inputSize, randArr(hiddenSize*inputSize, float64(inputSize))),
-		Wxz:        newDense(hiddenSize, inputSize, randArr(hiddenSize*inputSize, float64(inputSize))),
-		Wxh:        newDense(hiddenSize, inputSize, randArr(hiddenSize*inputSize, float64(inputSize))),
-		Whr:        newDense(hiddenSize, hiddenSize, randArr(hiddenSize*hiddenSize, float64(hiddenSize))),
-		Whz:        newDense(hiddenSize, hiddenSize, randArr(hiddenSize*hiddenSize, float64(hiddenSize))),
-		Whh:        newDense(hiddenSize, hiddenSize, randArr(hiddenSize*hiddenSize, float64(hiddenSize))),
+	layer := &GRU{
+		Wxr:        math32.NewDenseRandom(hiddenSize, inputSize),
+		Wxh:        math32.NewDenseRandom(hiddenSize, inputSize),
+		Whr:        math32.NewDenseRandom(hiddenSize, hiddenSize),
+		Whh:        math32.NewDenseRandom(hiddenSize, hiddenSize),
 		Br:         randArr(hiddenSize, float64(hiddenSize)),
 		Bz:         randArr(hiddenSize, float64(hiddenSize)),
 		h:          newDense(1, hiddenSize, nil),
 		hiddenSize: hiddenSize,
 	}
+
+	for i := range layer.scratch {
+		layer.scratch[i] = newDense(1, hiddenSize, nil)
+	}
+	return layer
 }
 
 // Update updates the GRU layer
 func (gru *GRU) Update(x []float32) []float32 {
 	input := newDense(1, len(x), x)
-	hr := newDense(1, gru.hiddenSize, nil)
-	hz := newDense(1, gru.hiddenSize, nil)
-	hh := newDense(1, gru.hiddenSize, nil)
+
+	hr := gru.scratch[0]
+	hh := gru.scratch[1]
+	hr.Reset(1, gru.hiddenSize)
+	hh.Reset(1, gru.hiddenSize)
 
 	matmul(&hr, &gru.h, &gru.Whr)
 	matmul(&hr, &input, &gru.Wxr)
 	add(hr.Data, gru.Br)
 	sigmoid(hr.Data)
-
-	matmul(&hz, &gru.h, &gru.Whz)
-	matmul(&hz, &input, &gru.Wxz)
-	add(hz.Data, gru.Bz)
-	sigmoid(hz.Data)
 
 	matmul(&hh, &gru.h, &gru.Whh)
 	matmul(&hh, &input, &gru.Wxh)
@@ -70,10 +70,8 @@ func (gru *GRU) Crossover(g1, g2 evolve.Genome) {
 	gru2 := g2.(*GRU)
 
 	crossoverMatrix(&gru.Wxr, &gru1.Wxr, &gru2.Wxr)
-	crossoverMatrix(&gru.Wxz, &gru1.Wxz, &gru2.Wxz)
 	crossoverMatrix(&gru.Wxh, &gru1.Wxh, &gru2.Wxh)
 	crossoverMatrix(&gru.Whr, &gru1.Whr, &gru2.Whr)
-	crossoverMatrix(&gru.Whz, &gru1.Whz, &gru2.Whz)
 	crossoverMatrix(&gru.Whh, &gru1.Whh, &gru2.Whh)
 	crossoverVector(gru.Br, gru1.Br, gru2.Br)
 	crossoverVector(gru.Bz, gru1.Bz, gru2.Bz)
@@ -81,28 +79,16 @@ func (gru *GRU) Crossover(g1, g2 evolve.Genome) {
 
 // Mutate mutates the genome
 func (gru *GRU) Mutate() {
-	mutateVector(gru.Wxr.Data)
-	mutateVector(gru.Wxz.Data)
-	mutateVector(gru.Wxh.Data)
-	mutateVector(gru.Whr.Data)
-	mutateVector(gru.Whz.Data)
-	mutateVector(gru.Whh.Data)
-	mutateVector(gru.Br)
-	mutateVector(gru.Bz)
+	const rate = 0.02
+	mutateVector(gru.Wxr.Data, rate)
+	mutateVector(gru.Wxh.Data, rate)
+	mutateVector(gru.Whr.Data, rate)
+	mutateVector(gru.Whh.Data, rate)
+	mutateVector(gru.Br, rate)
+	mutateVector(gru.Bz, rate)
 }
 
-func add(dst, src []float32) {
-	simd.AddFloat32s(dst, dst, src)
+func (gru *GRU) Reset() {
+	gru.h.Reset(1, gru.hiddenSize)
 }
-
-func sigmoid(x []float32) {
-	for i, v := range x {
-		x[i] = 1 / (1 + float32(math.Exp(-float64(v))))
-	}
-}
-
-func tanh(x []float32) {
-	for i, v := range x {
-		x[i] = 2/(1+float32(math.Exp(-2*float64(v)))) - 1
-	}
-}
+*/

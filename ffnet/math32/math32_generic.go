@@ -4,7 +4,7 @@
 //go:build !amd64
 // +build !amd64
 
-package ffnet
+package math32
 
 import "unsafe"
 

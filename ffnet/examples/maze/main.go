@@ -45,7 +45,7 @@ func main() {
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
 			switch {
-			case success > 90:
+			case success > 70:
 				width += 1
 				height += 1
 			case success < 1:

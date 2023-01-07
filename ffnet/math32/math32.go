@@ -83,10 +83,18 @@ func _axpy(x, y []float32, alpha float32) {
 // ---------------------------------- SIMD ----------------------------------
 
 func Add(dst, src []float32) {
+	if len(dst) != len(src) {
+		panic("math32: add of different sizes")
+	}
+
 	simd.AddFloat32s(dst, dst, src)
 }
 
 func Mul(dst, src []float32) {
+	if len(dst) != len(src) {
+		panic("math32: multiply of different sizes")
+	}
+
 	simd.MulFloat32s(dst, dst, src)
 }
 

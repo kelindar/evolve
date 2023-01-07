@@ -12,10 +12,10 @@ type RNN struct {
 	h  math32.Matrix // hidden state
 }
 
-// NewRNN creates a new RNN layer
+// NewRNN creates a new RNN layer, based on https://arxiv.org/pdf/1803.04831.pdf
 func NewRNN(inputSize, hiddenSize int) *RNN {
 	return &RNN{
-		Wx: math32.NewDenseRandom(hiddenSize, inputSize),
+		Wx: math32.NewDenseRandom(inputSize, hiddenSize),
 		Wh: math32.NewDenseRandom(1, hiddenSize),
 		Bh: math32.NewDenseRandom(1, hiddenSize),
 		h:  math32.NewDense(1, hiddenSize, nil),
@@ -28,20 +28,14 @@ func (l *RNN) Update(dst, x *math32.Matrix) *math32.Matrix {
 	// https://github.com/batzner/indrnn/blob/master/ind_rnn_cell.py
 	// https://arxiv.org/pdf/1803.04831.pdf
 	// ht = σ(Wxt + u·ht−1 + b)
-
-	math32.Matmul(dst, x, &l.Wx)    // (1) = Wxt
+	math32.Matmul(dst, x, &l.Wx)
 	math32.Mul(l.h.Data, l.Wh.Data) // (2) = u·ht−1
 	math32.Add(dst.Data, l.h.Data)  // (3) = (1) + (2)
 	math32.Add(dst.Data, l.Bh.Data) // (4) = (3) + bias
-	math32.Tanh(dst.Data)           // (5) = σ(4)
+	math32.Lrelu(dst.Data)          // (5) = σ(4)
 
-	// Remember the hidden state back
+	// Remember the hidden state for the next time step
 	copy(l.h.Data, dst.Data)
-
-	// Feed-forward layer
-	/*dst.Zero()
-	math32.Matmul(dst, &l.h, &l.Wh)
-	math32.Lrelu(dst.Data)*/
 	return dst
 }
 

@@ -1,10 +1,13 @@
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
 package layer
 
 import (
 	"math/rand"
 
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet/math32"
+	"github.com/kelindar/evolve/neural/math32"
 )
 
 type FFN struct {
@@ -38,8 +41,7 @@ func (l *FFN) Crossover(g1, g2 evolve.Genome) {
 
 // Mutate mutates the genome
 func (l *FFN) Mutate() {
-	const rate = 0.05
-	mutateVector(l.Wx.Data, rate)
+	mutateWeights(l.Wx.Data, 0.05)
 }
 
 func (l *FFN) Reset() {
@@ -54,8 +56,8 @@ func crossoverMatrix(dst, mx1, mx2 *math32.Matrix) {
 
 func crossoverVector(dst, v1, v2 []float32) {
 	math32.Clear(dst)
-	math32.Axpy(v1, dst, .75)
-	math32.Axpy(v2, dst, .25)
+	math32.Axpy(v1, dst, .80)
+	math32.Axpy(v2, dst, .20)
 }
 
 func mutateVector(v []float32, rate float64) {
@@ -64,4 +66,18 @@ func mutateVector(v []float32, rate float64) {
 			v[i] = x + float32(rand.NormFloat64())
 		}
 	}
+}
+
+func mutateWeights(v []float32, rate float64) {
+	mutateVector(v, rate)
+
+	/*activateChance := rand.Float64()
+	for i, x := range v {
+		switch {
+		case x == 0 && activateChance <= .00001: // 0.001% chance to activate
+			v[i] = float32(rand.NormFloat64())
+		case x != 0 && rand.Float64() <= rate:
+			v[i] = x + float32(rand.NormFloat64())
+		}
+	}*/
 }

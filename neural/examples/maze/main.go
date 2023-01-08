@@ -1,3 +1,6 @@
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
 package main
 
 import (
@@ -9,19 +12,19 @@ import (
 
 	"github.com/itchyny/maze"
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet"
+	"github.com/kelindar/evolve/neural"
 )
 
 var seed atomic.Int64
 
 var (
-	width  = 2
-	height = 2
+	width  = 1
+	height = 1
 )
 
 func main() {
-	pop := evolve.New(256, evaluateMaze, func() *ffnet.Network {
-		return ffnet.NewFeedForward([]int{4, 8, 64, 8, 4})
+	pop := evolve.New(256, evaluateMaze, func() *neural.Network {
+		return neural.NewNetwork([]int{4, 8, 64, 8, 4})
 	})
 
 	var solved float64
@@ -39,8 +42,9 @@ func main() {
 		if i%100 == 0 {
 			success := solved / 100.0 * 100
 			m := createMaze(int(seed.Load()))
+			solve(fittest, m)
 			m.Print(os.Stdout, maze.Color)
-			fmt.Printf("[#%.2d] best score = %.2f%%, success rate = %.2f%%\n", i, fitness, success)
+			fmt.Printf("[#%.2d] level %d, success rate = %.2f%%\n", i, width, success)
 
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
@@ -60,8 +64,11 @@ func main() {
 	}
 }
 
-func evaluateMaze(g *ffnet.Network) (score float32) {
-	m := createMaze(int(seed.Load()))
+func evaluateMaze(g *neural.Network) float32 {
+	return solve(g, createMaze(int(seed.Load())))
+}
+
+func solve(g *neural.Network, m *maze.Maze) (score float32) {
 	sensor := make([]float32, 4)
 	output := make([]float32, 4)
 

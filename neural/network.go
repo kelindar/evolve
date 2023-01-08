@@ -1,7 +1,7 @@
 // Copyright (c) Roman Atachiants and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for details.
 
-package ffnet
+package neural
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet/layer"
-	"github.com/kelindar/evolve/ffnet/math32"
+	"github.com/kelindar/evolve/neural/layer"
+	"github.com/kelindar/evolve/neural/math32"
 )
 
 // Layer represents a single layer
@@ -31,8 +31,8 @@ type Network struct {
 	layers     []Layer
 }
 
-// NewFeedForward creates a new NeuralNetwork
-func NewFeedForward(shape []int, weights ...[]float32) *Network {
+// NewNetwork creates a new NeuralNetwork
+func NewNetwork(shape []int, weights ...[]float32) *Network {
 	nn := &Network{
 		sensorSize: shape[0],
 		hiddenSize: shape[1 : len(shape)-1],
@@ -77,7 +77,6 @@ func (nn *Network) Predict(input, output []float32) []float32 {
 	defer nn.mu.Unlock()
 
 	for i := range nn.layers {
-		//layer = nn.forward(&nn.scratch[i%2], layer, &nn.weights[i])
 		layer = nn.layers[i].Update(&nn.scratch[i%2], layer)
 	}
 

@@ -1,8 +1,11 @@
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
 package layer
 
 import (
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet/math32"
+	"github.com/kelindar/evolve/neural/math32"
 )
 
 type RNN struct {
@@ -28,7 +31,7 @@ func (l *RNN) Update(dst, x *math32.Matrix) *math32.Matrix {
 	// https://github.com/batzner/indrnn/blob/master/ind_rnn_cell.py
 	// https://arxiv.org/pdf/1803.04831.pdf
 	// ht = σ(Wxt + u·ht−1 + b)
-	math32.Matmul(dst, x, &l.Wx)
+	math32.Matmul(dst, x, &l.Wx)    // (1) = Wxt
 	math32.Mul(l.h.Data, l.Wh.Data) // (2) = u·ht−1
 	math32.Add(dst.Data, l.h.Data)  // (3) = (1) + (2)
 	math32.Add(dst.Data, l.Bh.Data) // (4) = (3) + bias
@@ -53,8 +56,8 @@ func (l *RNN) Crossover(g1, g2 evolve.Genome) {
 func (l *RNN) Mutate() {
 	const rate = 0.05
 
-	mutateVector(l.Wx.Data, rate)
-	mutateVector(l.Wh.Data, rate)
+	mutateWeights(l.Wx.Data, rate)
+	mutateWeights(l.Wh.Data, rate)
 	mutateVector(l.Bh.Data, rate)
 }
 

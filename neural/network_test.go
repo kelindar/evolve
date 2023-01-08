@@ -1,4 +1,7 @@
-package ffnet
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
+package neural
 
 import (
 	"fmt"
@@ -19,7 +22,7 @@ BenchmarkPredict/10x10000x1-8     	   36583	     32805 ns/op	       1 B/op	     
 func BenchmarkPredict(b *testing.B) {
 	for _, size := range []int{2, 10, 100, 1000, 10000} {
 		b.Run(fmt.Sprintf("10x%dx1", size), func(b *testing.B) {
-			nn := NewFeedForward([]int{10, size, 1})
+			nn := NewNetwork([]int{10, size, 1})
 			in := make([]float32, 10)
 			out := make([]float32, 1)
 			b.ReportAllocs()
@@ -37,7 +40,7 @@ BenchmarkEvolve-8   	      16	  67508825 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkEvolve(b *testing.B) {
 	pop := evolve.New(256, func(*Network) float32 { return 0 }, func() *Network {
-		return NewFeedForward([]int{3, 128, 128, 1})
+		return NewNetwork([]int{3, 128, 128, 1})
 	})
 
 	b.ReportAllocs()
@@ -60,7 +63,7 @@ func BenchmarkDeep(b *testing.B) {
 	}
 	shape = append(shape, 1)
 
-	nn := NewFeedForward(shape)
+	nn := NewNetwork(shape)
 	in := make([]float32, 10)
 	out := make([]float32, 1)
 	b.ReportAllocs()
@@ -71,7 +74,7 @@ func BenchmarkDeep(b *testing.B) {
 }
 
 func TestXOR(t *testing.T) {
-	nn := NewFeedForward([]int{2, 2, 1},
+	nn := NewNetwork([]int{2, 2, 1},
 		[]float32{-1.4361037, 0.770241, 0.5583277, -1.5698348},
 		[]float32{1.8285279, 1.3325073},
 	)

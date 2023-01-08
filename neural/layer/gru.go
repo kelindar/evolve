@@ -1,9 +1,12 @@
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
 package layer
 
 /*
 import (
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet/math32"
+	"github.com/kelindar/evolve/neural/math32"
 )
 
 // GRU is an implementation of a gated recurrent unit. This implementation follows the approach

@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"github.com/kelindar/evolve"
-	"github.com/kelindar/evolve/ffnet"
+	"github.com/kelindar/evolve/neural"
 )
 
 // XOR tests
@@ -23,8 +23,8 @@ var tests = []struct {
 }
 
 func main() {
-	pop := evolve.New(256, evaluateXOR, func() *ffnet.FeedForward {
-		return ffnet.NewFeedForward([]int{2, 2, 1})
+	pop := evolve.New(256, evaluateXOR, func() *neural.Network {
+		return neural.NewNetwork([]int{2, 2, 1})
 	})
 
 	for i := 0; ; i++ { // loop forever
@@ -40,7 +40,7 @@ func main() {
 	}
 }
 
-func evaluateXOR(g *ffnet.FeedForward) (score float32) {
+func evaluateXOR(g *neural.Network) (score float32) {
 	for _, tc := range tests {
 		out := g.Predict(tc.input, nil)[0]
 		score += (1 - float32(math.Abs(float64(out-tc.output))))

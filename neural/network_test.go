@@ -1,9 +1,11 @@
-package ffnet
+// Copyright (c) Roman Atachiants and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for details.
+
+package neural
 
 import (
 	"fmt"
 	"testing"
-	"unsafe"
 
 	"github.com/kelindar/evolve"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +22,7 @@ BenchmarkPredict/10x10000x1-8     	   36583	     32805 ns/op	       1 B/op	     
 func BenchmarkPredict(b *testing.B) {
 	for _, size := range []int{2, 10, 100, 1000, 10000} {
 		b.Run(fmt.Sprintf("10x%dx1", size), func(b *testing.B) {
-			nn := NewFeedForward([]int{10, size, 1})
+			nn := NewNetwork([]int{10, size, 1})
 			in := make([]float32, 10)
 			out := make([]float32, 1)
 			b.ReportAllocs()
@@ -34,11 +36,11 @@ func BenchmarkPredict(b *testing.B) {
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkEvolve-8   	   25706	     46466 ns/op	       0 B/op	       0 allocs/op
+BenchmarkEvolve-8   	      16	  67508825 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkEvolve(b *testing.B) {
-	pop := evolve.New(256, func(*FeedForward) float32 { return 0 }, func() *FeedForward {
-		return NewFeedForward([]int{3, 2, 1})
+	pop := evolve.New(256, func(*Network) float32 { return 0 }, func() *Network {
+		return NewNetwork([]int{3, 128, 128, 1})
 	})
 
 	b.ReportAllocs()
@@ -50,7 +52,7 @@ func BenchmarkEvolve(b *testing.B) {
 
 /*
 cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkDeep-8   	     510	   2153739 ns/op	       2 B/op	       0 allocs/op
+BenchmarkDeep-8   	     270	   4218243 ns/op	       3 B/op	       0 allocs/op
 */
 func BenchmarkDeep(b *testing.B) {
 	const layers = 512
@@ -61,7 +63,7 @@ func BenchmarkDeep(b *testing.B) {
 	}
 	shape = append(shape, 1)
 
-	nn := NewFeedForward(shape)
+	nn := NewNetwork(shape)
 	in := make([]float32, 10)
 	out := make([]float32, 1)
 	b.ReportAllocs()
@@ -72,7 +74,7 @@ func BenchmarkDeep(b *testing.B) {
 }
 
 func TestXOR(t *testing.T) {
-	nn := NewFeedForward([]int{2, 2, 1},
+	nn := NewNetwork([]int{2, 2, 1},
 		[]float32{-1.4361037, 0.770241, 0.5583277, -1.5698348},
 		[]float32{1.8285279, 1.3325073},
 	)
@@ -91,50 +93,5 @@ func TestXOR(t *testing.T) {
 		out := nn.Predict(tc.input, nil)
 		assert.Equal(t, 1, len(out))
 		assert.InDelta(t, tc.output, out[0], delta)
-	}
-}
-
-func TestAsmMatmul(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{5, 6, 7, 8}
-	o := make([]float32, 4)
-
-	_f32_matmul(
-		unsafe.Pointer(&o[0]), unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]),
-		2, 2, 2, 2)
-
-	assert.Equal(t, []float32{19, 22, 43, 50}, o)
-}
-
-func TestGenericMatmul(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{5, 6, 7, 8}
-	o := make([]float32, 4)
-
-	matmul(o, x, y, 2, 2, 2, 2)
-	assert.Equal(t, []float32{19, 22, 43, 50}, o)
-}
-
-func TestAXPY(t *testing.T) {
-	x := []float32{1, 2, 3, 4}
-	y := []float32{1, 1, 1, 1}
-
-	_f32_axpy(
-		unsafe.Pointer(&x[0]),
-		unsafe.Pointer(&y[0]),
-		4, 2,
-	)
-
-	_ = x[0]
-	_ = y[0]
-	assert.Equal(t, []float32{3, 5, 7, 9}, y)
-}
-
-// axpyRef function, this doesn't use any SIMD as it seems like this version
-// is actually faster than blas32 one from gonum
-func axpyRef(x, y []float32, alpha float32) {
-	_ = y[len(x)-1] // remove bounds checks
-	for i, v := range x {
-		y[i] += alpha * v
 	}
 }

@@ -49,7 +49,7 @@ func main() {
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
 			switch {
-			case success > 70:
+			case success >= 75:
 				width += 1
 				height += 1
 			case success < 1:
@@ -96,16 +96,16 @@ func solve(g *neural.Network, m *maze.Maze) (score float32) {
 	}
 
 	// This part rewards exploration of the maze by counting the visited cells
-	visited := (maze.Up | maze.Down | maze.Left | maze.Right) << maze.VisitedOffset
+	const visited = (maze.Up | maze.Down | maze.Left | maze.Right) << maze.VisitedOffset
 	for x := range m.Directions {
 		for y := range m.Directions[x] {
-			if m.Directions[x][y] == visited {
-				score += .5 // bonus points for exploration
+			if m.Directions[x][y]&visited != 0 {
+				score += 0.5 // bonus points for exploration
 			}
 		}
 	}
 
-	return 0
+	return
 }
 
 func createMaze(seed int) *maze.Maze {

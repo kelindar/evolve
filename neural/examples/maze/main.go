@@ -18,13 +18,14 @@ import (
 var seed atomic.Int64
 
 var (
-	width  = 1
-	height = 1
+	width  = 2
+	height = 2
 )
 
 func main() {
+
 	pop := evolve.New(256, evaluateMaze, func() *neural.Network {
-		return neural.NewNetwork([]int{4, 8, 64, 8, 4})
+		return neural.NewNetwork([]int{4, 8, 8, 4})
 	})
 
 	var solved float64
@@ -34,7 +35,7 @@ func main() {
 
 		// Every new population the maze will be different to avoid overfitting
 		seed.Store(time.Now().UnixMicro())
-		if fitness >= 95 {
+		if fitness >= 75 {
 			solved++
 		}
 
@@ -49,7 +50,7 @@ func main() {
 			// If our success rate is high, consider the maze solved and increase the complexity
 			// of the problem space
 			switch {
-			case success >= 75:
+			case success > 70:
 				width += 1
 				height += 1
 			case success < 1:
@@ -68,7 +69,7 @@ func evaluateMaze(g *neural.Network) float32 {
 	return solve(g, createMaze(int(seed.Load())))
 }
 
-func solve(g *neural.Network, m *maze.Maze) (score float32) {
+func solve(g *neural.Network, m *maze.Maze) float32 {
 	sensor := make([]float32, 4)
 	output := make([]float32, 4)
 
@@ -88,24 +89,36 @@ func solve(g *neural.Network, m *maze.Maze) (score float32) {
 			m.Move(maze.Right)
 		}
 
-		// Reward more for shorter solutions
 		if m.Finished {
-			// return 90 + (10 * float32(n) / 100)
-			return 100
+			return 75 + rankExploration(m)
 		}
 	}
 
 	// This part rewards exploration of the maze by counting the visited cells
-	const visited = (maze.Up | maze.Down | maze.Left | maze.Right) << maze.VisitedOffset
+	// bonus points for exploration
+	return rankExploration(m)
+}
+
+func rankExploration(m *maze.Maze) float32 {
+	//const visited = (maze.Up | maze.Down | maze.Left | maze.Right) << maze.VisitedOffset
+	var total, visits float64
 	for x := range m.Directions {
 		for y := range m.Directions[x] {
-			if m.Directions[x][y]&visited != 0 {
-				score += 0.5 // bonus points for exploration
+			cell := m.Directions[x][y]
+			switch {
+			case cell&0xF00 > 0:
+				visits++
+				total++
+			case cell&0xF > 0:
+				total++
 			}
 		}
 	}
 
-	return
+	if total == 0 {
+		return 25
+	}
+	return 25 * float32(visits/total)
 }
 
 func createMaze(seed int) *maze.Maze {

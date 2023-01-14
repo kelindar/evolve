@@ -56,8 +56,8 @@ func crossoverMatrix(dst, mx1, mx2 *math32.Matrix) {
 
 func crossoverVector(dst, v1, v2 []float32) {
 	math32.Clear(dst)
-	math32.Axpy(v1, dst, .75)
-	math32.Axpy(v2, dst, .25)
+	math32.Axpy(dst, v1, .75)
+	math32.Axpy(dst, v2, .25)
 }
 
 func mutateVector(v []float32, rate float64) {

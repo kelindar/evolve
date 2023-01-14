@@ -3,95 +3,92 @@
 
 package layer
 
-/*
 import (
 	"github.com/kelindar/evolve"
 	"github.com/kelindar/evolve/neural/math32"
 )
 
-// GRU is an implementation of a gated recurrent unit. This implementation follows the approach
-// described in the "Simplified Minimal Gated Unit Variations for Recurrent Neural Networks"
-// paper by Joel Heck and Fathi M. Salem. The paper proposes a simplified version of GRUs that
-// uses minimal gated units, which are a combination of a sigmoid unit and a tanh unit.
 type GRU struct {
-	Wxr, Wxh,
-	Whr, Whh math32.Matrix
-	Br, Bz     []float32
-	h          math32.Matrix
-	scratch    [2]math32.Matrix
-	hiddenSize int
+	Wz, Uz, Bz math32.Matrix // Gating unit
+	Wh, Uh, Bh math32.Matrix // Hidden unit
+	h          math32.Matrix // hidden state
+	hc         math32.Matrix // hidden state candidate
 }
 
-// NewGRU creates a new GRU layer
+// NewGRU creates a new GRU layer, based on https://arxiv.org/pdf/1803.04831.pdf
 func NewGRU(inputSize, hiddenSize int) *GRU {
-	layer := &GRU{
-		Wxr:        math32.NewDenseRandom(hiddenSize, inputSize),
-		Wxh:        math32.NewDenseRandom(hiddenSize, inputSize),
-		Whr:        math32.NewDenseRandom(hiddenSize, hiddenSize),
-		Whh:        math32.NewDenseRandom(hiddenSize, hiddenSize),
-		Br:         randArr(hiddenSize, float64(hiddenSize)),
-		Bz:         randArr(hiddenSize, float64(hiddenSize)),
-		h:          newDense(1, hiddenSize, nil),
-		hiddenSize: hiddenSize,
+	return &GRU{
+		Wz: math32.NewDenseRandom(inputSize, hiddenSize),
+		Wh: math32.NewDenseRandom(inputSize, hiddenSize),
+		Uz: math32.NewDenseRandom(1, hiddenSize),
+		Uh: math32.NewDenseRandom(1, hiddenSize),
+		Bz: math32.NewDenseRandom(1, hiddenSize),
+		Bh: math32.NewDenseRandom(1, hiddenSize),
+		h:  math32.NewDense(1, hiddenSize, nil),
+		hc: math32.NewDense(1, hiddenSize, nil),
 	}
-
-	for i := range layer.scratch {
-		layer.scratch[i] = newDense(1, hiddenSize, nil)
-	}
-	return layer
 }
 
-// Update updates the GRU layer
-func (gru *GRU) Update(x []float32) []float32 {
-	input := newDense(1, len(x), x)
+func (l *GRU) Update(z, x *math32.Matrix) *math32.Matrix {
+	z.Reset(x.Rows, l.Wz.Cols)
+	l.hc.Zero()
 
-	hr := gru.scratch[0]
-	hh := gru.scratch[1]
-	hr.Reset(1, gru.hiddenSize)
-	hh.Reset(1, gru.hiddenSize)
+	// Compute the gating unit
+	math32.Matmul(z, x, &l.Wz)
+	math32.Mul(l.h.Data, l.Uz.Data)
+	math32.Add(z.Data, l.h.Data)
+	math32.Add(z.Data, l.Bz.Data)
+	math32.Lrelu(z.Data)
 
-	matmul(&hr, &gru.h, &gru.Whr)
-	matmul(&hr, &input, &gru.Wxr)
-	add(hr.Data, gru.Br)
-	sigmoid(hr.Data)
+	// Compute the hidden unit
+	hc := &l.hc
+	math32.Matmul(hc, x, &l.Wh)
+	math32.Mul(hc.Data, z.Data)
+	math32.Mul(hc.Data, l.Uh.Data)
+	math32.Add(hc.Data, l.h.Data)
+	math32.Add(hc.Data, l.Bh.Data)
+	math32.Tanh(hc.Data)
 
-	matmul(&hh, &gru.h, &gru.Whh)
-	matmul(&hh, &input, &gru.Wxh)
-	add(hh.Data, hh.Data)
-	tanh(hh.Data)
+	// Multiply the candidate hidden state by the gating unit
+	math32.Mul(hc.Data, z.Data)
 
-	for i, v := range hr.Data {
-		hh.Data[i] = hh.Data[i]*v + gru.h.Data[i]*(1-v)
+	for i := range z.Data {
+		z.Data[i] = 1 - z.Data[i]
 	}
-	gru.h = hh
-	return hh.Data
+
+	math32.Mul(z.Data, l.h.Data)
+	math32.Add(z.Data, hc.Data)
+
+	// Remember the hidden state for the next time step
+	copy(l.h.Data, z.Data)
+	return z
 }
 
 // Crossover performs crossover between two genomes
-func (gru *GRU) Crossover(g1, g2 evolve.Genome) {
-	gru1 := g1.(*GRU)
-	gru2 := g2.(*GRU)
+func (l *GRU) Crossover(g1, g2 evolve.Genome) {
+	l1 := g1.(*GRU)
+	l2 := g2.(*GRU)
 
-	crossoverMatrix(&gru.Wxr, &gru1.Wxr, &gru2.Wxr)
-	crossoverMatrix(&gru.Wxh, &gru1.Wxh, &gru2.Wxh)
-	crossoverMatrix(&gru.Whr, &gru1.Whr, &gru2.Whr)
-	crossoverMatrix(&gru.Whh, &gru1.Whh, &gru2.Whh)
-	crossoverVector(gru.Br, gru1.Br, gru2.Br)
-	crossoverVector(gru.Bz, gru1.Bz, gru2.Bz)
+	crossoverMatrix(&l.Wh, &l1.Wh, &l2.Wh)
+	crossoverMatrix(&l.Uh, &l1.Uh, &l2.Uh)
+	crossoverMatrix(&l.Bh, &l1.Bh, &l2.Bh)
+	crossoverMatrix(&l.Wz, &l1.Wz, &l2.Wz)
+	crossoverMatrix(&l.Uz, &l1.Uz, &l2.Uz)
+	crossoverMatrix(&l.Bz, &l1.Bz, &l2.Bz)
 }
 
 // Mutate mutates the genome
-func (gru *GRU) Mutate() {
-	const rate = 0.02
-	mutateVector(gru.Wxr.Data, rate)
-	mutateVector(gru.Wxh.Data, rate)
-	mutateVector(gru.Whr.Data, rate)
-	mutateVector(gru.Whh.Data, rate)
-	mutateVector(gru.Br, rate)
-	mutateVector(gru.Bz, rate)
+func (l *GRU) Mutate() {
+	const rate = 0.05
+
+	mutateWeights(l.Wh.Data, rate)
+	mutateWeights(l.Uh.Data, rate)
+	mutateVector(l.Bh.Data, rate)
+	mutateWeights(l.Wz.Data, rate)
+	mutateWeights(l.Uz.Data, rate)
+	mutateVector(l.Bz.Data, rate)
 }
 
-func (gru *GRU) Reset() {
-	gru.h.Reset(1, gru.hiddenSize)
+func (l *GRU) Reset() {
+	l.h.Zero()
 }
-*/

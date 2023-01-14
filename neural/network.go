@@ -5,7 +5,6 @@ package neural
 
 import (
 	"encoding/json"
-	"math/rand"
 	"sync"
 
 	"github.com/kelindar/evolve"
@@ -42,7 +41,7 @@ func NewNetwork(shape []int, weights ...[]float32) *Network {
 	// Create weight matrices for each prev
 	prev := nn.sensorSize
 	for _, hidden := range shape[1:] {
-		nn.layers = append(nn.layers, layer.NewRNN(prev, hidden))
+		nn.layers = append(nn.layers, layer.NewGRU(prev, hidden))
 		prev = hidden
 	}
 
@@ -121,22 +120,4 @@ func (nn *Network) Reset() {
 func (nn *Network) String() string {
 	out, _ := json.MarshalIndent(nn.weights, "", "\t")
 	return string(out)
-}
-
-func mutateVector(v []float32, rate float64) {
-	for i, x := range v {
-		if rand.Float64() < rate {
-			v[i] = x + float32(rand.NormFloat64())
-		}
-	}
-}
-
-func crossoverMatrix(dst, mx1, mx2 *math32.Matrix) {
-	crossoverVector(dst.Data, mx1.Data, mx2.Data)
-}
-
-func crossoverVector(dst, v1, v2 []float32) {
-	math32.Clear(dst)
-	math32.Axpy(v1, dst, .75)
-	math32.Axpy(v2, dst, .25)
 }

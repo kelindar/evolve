@@ -5,6 +5,7 @@ package math32
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"unsafe"
 
@@ -55,13 +56,13 @@ func Matmul(dst, m, n *Matrix) {
 	}
 }
 
-// Axpy function (y = ax + y)
-func Axpy(x, y []float32, alpha float32) {
+// Axpy function (dst += alpha * x)
+func Axpy(dst, x []float32, alpha float32) {
 	switch {
 	case avx2:
-		_f32_axpy(unsafe.Pointer(&x[0]), unsafe.Pointer(&y[0]), uint64(len(y)), alpha)
+		_f32_axpy(unsafe.Pointer(&x[0]), unsafe.Pointer(&dst[0]), uint64(len(dst)), alpha)
 	default:
-		_axpy(x, y, alpha)
+		_axpy(x, dst, alpha)
 	}
 }
 
@@ -87,7 +88,7 @@ func _axpy(x, y []float32, alpha float32) {
 
 func Add(dst, src []float32) {
 	if len(dst) != len(src) {
-		panic("math32: add of different sizes")
+		panic(fmt.Errorf("math32: add of different sizes (%d, %d)", len(dst), len(src)))
 	}
 
 	simd.AddFloat32s(dst, dst, src)
@@ -95,7 +96,7 @@ func Add(dst, src []float32) {
 
 func Mul(dst, src []float32) {
 	if len(dst) != len(src) {
-		panic("math32: multiply of different sizes")
+		panic(fmt.Errorf("math32: multiply of different sizes (%d, %d)", len(dst), len(src)))
 	}
 
 	simd.MulFloat32s(dst, dst, src)

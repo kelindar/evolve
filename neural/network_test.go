@@ -5,6 +5,7 @@ package neural
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/kelindar/evolve"
@@ -74,11 +75,17 @@ func BenchmarkDeep(b *testing.B) {
 }
 
 func TestXOR(t *testing.T) {
-	nn := NewNetwork([]int{2, 2, 1},
-		[]float32{-1.4361037, 0.770241, 0.5583277, -1.5698348},
-		[]float32{1.8285279, 1.3325073},
-	)
+	pop := evolve.New(64, evaluateXOR, func() *Network {
+		return NewNetwork([]int{2, 2, 1})
+	})
 
+	for i := 0; i < 100; i++ {
+		pop.Evolve()
+	}
+	assert.InDelta(t, 1, evaluateXOR(pop.Evolve())/4, 0.01)
+}
+
+func evaluateXOR(g *Network) (score float32) {
 	tests := []struct {
 		input  []float32
 		output float32
@@ -88,10 +95,10 @@ func TestXOR(t *testing.T) {
 		{input: []float32{1, 0}, output: 1},
 		{input: []float32{1, 1}, output: 0},
 	}
+
 	for _, tc := range tests {
-		const delta = 0.01
-		out := nn.Predict(tc.input, nil)
-		assert.Equal(t, 1, len(out))
-		assert.InDelta(t, tc.output, out[0], delta)
+		out := g.Predict(tc.input, nil)[0]
+		score += (1 - float32(math.Abs(float64(out-tc.output))))
 	}
+	return
 }

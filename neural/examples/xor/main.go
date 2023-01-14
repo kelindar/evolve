@@ -31,7 +31,7 @@ func main() {
 		fittest := pop.Evolve()
 		fitness := evaluateXOR(fittest) / float32(len(tests)) * 100
 		switch {
-		case fitness >= 99.99:
+		case fitness >= 99.9:
 			fmt.Printf("[#%.2d] converged with score = %.2f%% %s\n", i, fitness, fittest.String())
 			return
 		case i%1000 == 0:

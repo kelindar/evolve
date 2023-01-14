@@ -13,7 +13,8 @@ import (
 type FFN struct {
 	inputSize  int
 	hiddenSize int
-	Wx         math32.Matrix
+	Wx         math32.Matrix // input weights
+	Bx         math32.Matrix // input bias
 }
 
 // NewFFN creates a new feed-forward network layer
@@ -22,12 +23,14 @@ func NewFFN(inputSize, hiddenSize int) *FFN {
 		inputSize:  inputSize,
 		hiddenSize: hiddenSize,
 		Wx:         math32.NewMatrixRandom(hiddenSize, hiddenSize),
+		Bx:         math32.NewMatrixBias(1, hiddenSize),
 	}
 }
 
 func (l *FFN) Update(dst, x *math32.Matrix) *math32.Matrix {
 	dst.Reset(x.Rows, l.Wx.Cols)
 	math32.Matmul(dst, x, &l.Wx)
+	math32.Add(dst.Data, l.Bx.Data)
 	math32.Lrelu(dst.Data)
 	return dst
 }
@@ -36,12 +39,17 @@ func (l *FFN) Update(dst, x *math32.Matrix) *math32.Matrix {
 func (l *FFN) Crossover(g1, g2 evolve.Genome) {
 	l1 := g1.(*FFN)
 	l2 := g2.(*FFN)
+
 	crossoverMatrix(&l.Wx, &l1.Wx, &l2.Wx)
+	crossoverMatrix(&l.Bx, &l1.Bx, &l2.Bx)
 }
 
 // Mutate mutates the genome
 func (l *FFN) Mutate() {
-	mutateWeights(l.Wx.Data, 0.05)
+	const rate = 0.05
+
+	mutateWeights(l.Wx.Data, rate)
+	mutateBias(l.Bx.Data, rate)
 }
 
 func (l *FFN) Reset() {
@@ -64,6 +72,14 @@ func mutateVector(v []float32, rate float64) {
 	for i, x := range v {
 		if rand.Float64() < rate {
 			v[i] = x + float32(rand.NormFloat64())
+		}
+	}
+}
+
+func mutateBias(v []float32, rate float64) {
+	for i := range v {
+		if rand.Float64() < rate {
+			v[i] *= float32(rand.NormFloat64() / 100)
 		}
 	}
 }

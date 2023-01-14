@@ -58,7 +58,7 @@ func (l *RNN) Mutate() {
 
 	mutateWeights(l.Wx.Data, rate)
 	mutateWeights(l.Wh.Data, rate)
-	mutateVector(l.Bh.Data, rate)
+	mutateBias(l.Bh.Data, rate)
 }
 
 func (l *RNN) Reset() {

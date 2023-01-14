@@ -80,9 +80,10 @@ func (l *MGU) Mutate() {
 	const rate = 0.05
 
 	mutateWeights(l.Wh.Data, rate)
-	mutateVector(l.Bh.Data, rate)
 	mutateWeights(l.Uf.Data, rate)
-	mutateVector(l.Bf.Data, rate)
+
+	mutateBias(l.Bh.Data, rate)
+	mutateBias(l.Bf.Data, rate)
 }
 
 func (l *MGU) Reset() {

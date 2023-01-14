@@ -43,6 +43,11 @@ func (g *Genome) String() string {
 	return string(*g)
 }
 
+// Reset resets the internal state, no-op in this case
+func (g *Genome) Reset() {
+	// No state
+}
+
 // New creates a function for a random genome string
 func New(length int) func() *Genome {
 	return func() *Genome {

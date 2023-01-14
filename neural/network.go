@@ -23,8 +23,8 @@ type Layer interface {
 // Network represents a feed forward neural network
 type Network struct {
 	mu         sync.Mutex
+	shape      []int
 	sensorSize int
-	hiddenSize []int
 	outputSize int
 	weights    []math32.Matrix
 	scratch    [2]math32.Matrix
@@ -34,20 +34,17 @@ type Network struct {
 // NewNetwork creates a new NeuralNetwork
 func NewNetwork(shape []int, weights ...[]float32) *Network {
 	nn := &Network{
+		shape:      shape,
 		sensorSize: shape[0],
-		hiddenSize: shape[1 : len(shape)-1],
 		outputSize: shape[len(shape)-1],
 	}
 
 	// Create weight matrices for each prev
 	prev := nn.sensorSize
-	for _, hidden := range nn.hiddenSize {
+	for _, hidden := range shape[1:] {
 		nn.layers = append(nn.layers, layer.NewRNN(prev, hidden))
 		prev = hidden
 	}
-
-	// Append the output layer
-	nn.layers = append(nn.layers, layer.NewFFN(prev, nn.outputSize))
 
 	// Optionally, construct a network from pre-defined values
 	for i := range weights {

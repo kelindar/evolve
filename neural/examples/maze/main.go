@@ -25,7 +25,7 @@ var (
 func main() {
 
 	pop := evolve.New(256, evaluateMaze, func() *neural.Network {
-		return neural.NewNetwork([]int{4, 8, 8, 4})
+		return neural.NewNetwork([]int{4, 8, 8, 8, 8, 4})
 	})
 
 	var solved float64

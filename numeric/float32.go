@@ -36,6 +36,11 @@ func (g *Float32s) String() string {
 	return fmt.Sprintf("%+v", *g)
 }
 
+// Reset resets the internal state, no-op in this case
+func (g *Float32s) Reset() {
+	// No state
+}
+
 // Mutate mutates a random gene
 func (g *Float32s) Mutate() {
 	const rate = 0.02

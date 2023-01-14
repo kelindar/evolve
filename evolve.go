@@ -13,6 +13,7 @@ import (
 type Genome interface {
 	Crossover(Genome, Genome)
 	Mutate()
+	Reset()
 }
 
 // Population represents a population for evolution
@@ -136,6 +137,9 @@ func (p *Population[T]) evaluate(parallelism int) {
 		go func(start, end int) {
 			for j := start; j < end; j++ {
 				v := p.genomes[j]
+				v.Reset()
+
+				// Evaluate the fitness
 				fitness := p.fitnessFn(v)
 				p.fitnessOf[j] = fitness
 			}

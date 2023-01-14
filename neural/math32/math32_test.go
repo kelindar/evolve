@@ -4,6 +4,7 @@
 package math32
 
 import (
+	"fmt"
 	"math"
 	"testing"
 	"unsafe"
@@ -39,6 +40,46 @@ func BenchmarkAXPY(b *testing.B) {
 			)
 		}
 	})
+}
+
+/*
+cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
+BenchmarkMatmul/4x4-std-8         	17968401	        68.36 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/4x4-asm-8         	30570522	        42.56 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/8x8-std-8         	 3465379	       349.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/8x8-asm-8         	13685428	        84.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/16x16-std-8       	  590862	      2279 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/16x16-asm-8       	 3117709	       389.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/32x32-std-8       	   73831	     15662 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/32x32-asm-8       	  594648	      2435 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/64x64-std-8       	   10000	    117896 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/64x64-asm-8       	   90950	     14022 ns/op	       0 B/op	       0 allocs/op
+*/
+func BenchmarkMatmul(b *testing.B) {
+	for _, size := range []int{4, 8, 16, 32, 64} {
+		m := newTestMatrix(size, size)
+		n := newTestMatrix(size, size)
+		o := newTestMatrix(size, size)
+
+		b.Run(fmt.Sprintf("%dx%d-std", size, size), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_matmul(o.Data, m.Data, n.Data, m.Rows, m.Cols, n.Rows, n.Cols)
+			}
+		})
+
+		b.Run(fmt.Sprintf("%dx%d-asm", size, size), func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_f32_matmul(
+					unsafe.Pointer(&o.Data[0]), unsafe.Pointer(&m.Data[0]), unsafe.Pointer(&n.Data[0]),
+					uint64(m.Rows), uint64(m.Cols), uint64(n.Rows), uint64(n.Cols),
+				)
+			}
+		})
+	}
 }
 
 func TestApproxSwish(t *testing.T) {
@@ -109,4 +150,13 @@ func axpyRef(x, y []float32, alpha float32) {
 	for i, v := range x {
 		y[i] += alpha * v
 	}
+}
+
+// newTestMatrix creates a new matrix
+func newTestMatrix(r, c int) *Matrix {
+	mx := NewDense(r, c, nil)
+	for i := 0; i < len(mx.Data); i++ {
+		mx.Data[i] = 2
+	}
+	return &mx
 }

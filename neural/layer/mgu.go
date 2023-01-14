@@ -36,7 +36,7 @@ func (l *MGU) Update(z, x *math32.Matrix) *math32.Matrix {
 
 	// Compute the forget gate
 	math32.Matmul(z, x, &l.Wf)
-	math32.Mul(l.h.Data, l.Uf.Data)
+	math32.Mul(z.Data, l.Uf.Data)
 	math32.Add(z.Data, l.h.Data)
 	math32.Add(z.Data, l.Bf.Data)
 	math32.Lrelu(z.Data)

@@ -154,9 +154,19 @@ func axpyRef(x, y []float32, alpha float32) {
 
 // newTestMatrix creates a new matrix
 func newTestMatrix(r, c int) *Matrix {
-	mx := NewDense(r, c, nil)
+	mx := NewMatrix(r, c, nil)
 	for i := 0; i < len(mx.Data); i++ {
 		mx.Data[i] = 2
 	}
 	return &mx
+}
+
+func TestNewDenseBias(t *testing.T) {
+	mx := NewMatrixBias(2, 2)
+	assert.Equal(t, 4, len(mx.Data))
+	assert.Equal(t, 2, mx.Rows)
+	assert.Equal(t, 2, mx.Cols)
+	for _, v := range mx.Data {
+		assert.Equal(t, float32(1), v)
+	}
 }

@@ -21,7 +21,7 @@ func NewFFN(inputSize, hiddenSize int) *FFN {
 	return &FFN{
 		inputSize:  inputSize,
 		hiddenSize: hiddenSize,
-		Wx:         math32.NewDenseRandom(hiddenSize, hiddenSize),
+		Wx:         math32.NewMatrixRandom(hiddenSize, hiddenSize),
 	}
 }
 

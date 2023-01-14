@@ -18,10 +18,10 @@ type RNN struct {
 // NewRNN creates a new RNN layer, based on https://arxiv.org/pdf/1803.04831.pdf
 func NewRNN(inputSize, hiddenSize int) *RNN {
 	return &RNN{
-		Wx: math32.NewDenseRandom(inputSize, hiddenSize),
-		Wh: math32.NewDenseRandom(1, hiddenSize),
-		Bh: math32.NewDenseRandom(1, hiddenSize),
-		h:  math32.NewDense(1, hiddenSize, nil),
+		Wx: math32.NewMatrixRandom(inputSize, hiddenSize),
+		Wh: math32.NewMatrixRandom(1, hiddenSize),
+		Bh: math32.NewMatrixBias(1, hiddenSize),
+		h:  math32.NewMatrix(1, hiddenSize, nil),
 	}
 }
 

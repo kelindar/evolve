@@ -15,6 +15,8 @@ import (
 	"github.com/kelindar/evolve/neural"
 )
 
+const epoch = 20
+
 var seed atomic.Int64
 
 var (
@@ -24,8 +26,8 @@ var (
 
 func main() {
 
-	pop := evolve.New(256, evaluateMaze, func() *neural.Network {
-		return neural.NewNetwork([]int{4, 8, 4})
+	pop := evolve.New(512, evaluateMaze, func() *neural.Network {
+		return neural.NewNetwork([]int{4, 8, 8, 8, 4})
 	})
 
 	var solved float64
@@ -39,9 +41,9 @@ func main() {
 			solved++
 		}
 
-		// Every 100 generations, reset and print out
-		if i%100 == 0 {
-			success := solved / 100.0 * 100
+		// Every epoch (n generations), reset and print out
+		if i%epoch == 0 {
+			success := solved / epoch * 100
 			m := createMaze(int(seed.Load()))
 			solve(fittest, m)
 			m.Print(os.Stdout, maze.Color)

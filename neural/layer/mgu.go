@@ -12,19 +12,18 @@ import (
 type MGU struct {
 	Uf, Bf math32.Matrix // Forget gate
 	Wh, Bh math32.Matrix // Hidden gate
-	h      math32.Matrix // hidden state
-	hc     math32.Matrix // hidden state candidate
+	h, hc  math32.Matrix // hidden state and a candidate
 }
 
 // NewMGU creates a new MGU layer, based on https://arxiv.org/abs/1603.09420 and https://arxiv.org/abs/1701.03452
 func NewMGU(inputSize, hiddenSize int) *MGU {
 	return &MGU{
-		Wh: math32.NewDenseRandom(inputSize, hiddenSize),
-		Uf: math32.NewDenseRandom(1, hiddenSize),
-		Bf: math32.NewDenseRandom(1, hiddenSize),
-		Bh: math32.NewDenseRandom(1, hiddenSize),
-		h:  math32.NewDense(1, hiddenSize, nil),
-		hc: math32.NewDense(1, hiddenSize, nil),
+		Wh: math32.NewMatrixRandom(inputSize, hiddenSize),
+		Uf: math32.NewMatrixRandom(1, hiddenSize),
+		Bf: math32.NewMatrixBias(1, hiddenSize),
+		Bh: math32.NewMatrixBias(1, hiddenSize),
+		h:  math32.NewMatrix(1, hiddenSize, nil),
+		hc: math32.NewMatrix(1, hiddenSize, nil),
 	}
 }
 

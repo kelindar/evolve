@@ -139,8 +139,8 @@ type Matrix struct {
 	Cols int       `json:"cols"`
 }
 
-// NewDense creates a new dense matrix
-func NewDense(r, c int, data []float32) Matrix {
+// NewMatrix creates a new dense matrix
+func NewMatrix(r, c int, data []float32) Matrix {
 	if r <= 0 || c <= 0 {
 		if r == 0 || c == 0 {
 			panic(errZeroLength)
@@ -163,9 +163,18 @@ func NewDense(r, c int, data []float32) Matrix {
 	}
 }
 
-// NewDenseRandom creates a new dense matrix with randomly initialized values
-func NewDenseRandom(r, c int) Matrix {
-	return NewDense(r, c, randArr(r*c, float64(c)))
+// NewMatrixRandom creates a new dense matrix with randomly initialized values
+func NewMatrixRandom(r, c int) Matrix {
+	return NewMatrix(r, c, randArr(r*c, float64(c)))
+}
+
+// NewMatrixBias creates a new dense matrix with bias set to
+func NewMatrixBias(r, c int) Matrix {
+	mx := NewMatrix(r, c, nil)
+	for i := range mx.Data {
+		mx.Data[i] = 1.0
+	}
+	return mx
 }
 
 // Reset resets the matrix to zero and grows it if necessary

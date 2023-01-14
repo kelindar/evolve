@@ -18,14 +18,14 @@ import (
 var seed atomic.Int64
 
 var (
-	width  = 2
-	height = 2
+	width  = 1
+	height = 1
 )
 
 func main() {
 
 	pop := evolve.New(256, evaluateMaze, func() *neural.Network {
-		return neural.NewNetwork([]int{4, 8, 8, 8, 8, 4})
+		return neural.NewNetwork([]int{4, 8, 4})
 	})
 
 	var solved float64

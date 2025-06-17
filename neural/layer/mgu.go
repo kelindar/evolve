@@ -29,37 +29,25 @@ func NewMGU(inputSize, hiddenSize int) *MGU {
 
 func (l *MGU) Update(f, x *math32.Matrix) *math32.Matrix {
 	f.Reset(x.Rows, l.h.Cols)
-	l.hc.Zero()
 
-	// Compute the forget gate, this is using a simplified
-	// version of the forget gate, as described in https://arxiv.org/abs/1701.03452
-	copy(f.Data, l.Uf.Data)
-	math32.Add(f.Data, l.h.Data)
+	// f = sigmoid(h_prev ⊙ Uf + Bf)
+	copy(f.Data, l.h.Data)
+	math32.Mul(f.Data, l.Uf.Data)
 	math32.Add(f.Data, l.Bf.Data)
-	math32.Lrelu(f.Data)
+	math32.Sigmoid(f.Data)
 
-	// Compute the candidate hidden state (h estimate)
+	// hc = tanh(x·Wh + Bh)
 	hc := &l.hc
-	copy(hc.Data, l.h.Data)
-	math32.Mul(hc.Data, f.Data)
+	hc.Reset(x.Rows, l.h.Cols)
 	math32.Matmul(hc, x, &l.Wh)
 	math32.Add(hc.Data, l.Bh.Data)
 	math32.Tanh(hc.Data)
 
-	// Multiply the candidate hidden state by the forget gate
-	math32.Mul(hc.Data, f.Data)
-
-	// Invert the forget gate and multiply it by the previous hidden state
-	for i := range f.Data {
-		f.Data[i] = 1 - f.Data[i]
+	// h = f ⊙ h_prev + (1 - f) ⊙ hc
+	for i, ft := range f.Data {
+		f.Data[i] = ft*l.h.Data[i] + (1-ft)*hc.Data[i]
 	}
 
-	math32.Mul(f.Data, l.h.Data)
-
-	// Add the two together to get the new hidden state
-	math32.Add(f.Data, hc.Data)
-
-	// Remember the hidden state for the next time step
 	copy(l.h.Data, f.Data)
 	return f
 }

@@ -13,9 +13,9 @@ import (
 )
 
 /*
-cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkAXPY/std-8         	168842340	         7.228 ns/op	       0 B/op	       0 allocs/op
-BenchmarkAXPY/asm-8         	189254059	         6.233 ns/op	       0 B/op	       0 allocs/op
+cpu: 13th Gen Intel(R) Core(TM) i7-13700K
+BenchmarkAXPY/std-24         	279720866	         4.311 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAXPY/asm-24         	521740717	         2.249 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkAXPY(b *testing.B) {
 	x := []float32{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
@@ -43,17 +43,17 @@ func BenchmarkAXPY(b *testing.B) {
 }
 
 /*
-cpu: Intel(R) Core(TM) i7-9700K CPU @ 3.60GHz
-BenchmarkMatmul/4x4-std-8         	17968401	        68.36 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/4x4-asm-8         	30570522	        42.56 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/8x8-std-8         	 3465379	       349.4 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/8x8-asm-8         	13685428	        84.99 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/16x16-std-8       	  590862	      2279 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/16x16-asm-8       	 3117709	       389.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/32x32-std-8       	   73831	     15662 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/32x32-asm-8       	  594648	      2435 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/64x64-std-8       	   10000	    117896 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMatmul/64x64-asm-8       	   90950	     14022 ns/op	       0 B/op	       0 allocs/op
+cpu: 13th Gen Intel(R) Core(TM) i7-13700K
+BenchmarkMatmul/4x4-std-24         	23301105	        52.87 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/4x4-asm-24         	40000532	        31.00 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/8x8-std-24         	 4332135	       278.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/8x8-asm-24         	25806396	        46.98 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/16x16-std-24       	  827654	      1368 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/16x16-asm-24       	 4809632	       249.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/32x32-std-24       	  123078	      9888 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/32x32-asm-24       	  685725	      1721 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/64x64-std-24       	   17685	     69776 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMatmul/64x64-asm-24       	  133333	      9146 ns/op	       0 B/op	       0 allocs/op
 */
 func BenchmarkMatmul(b *testing.B) {
 	for _, size := range []int{4, 8, 16, 32, 64} {
@@ -169,4 +169,13 @@ func TestNewDenseBias(t *testing.T) {
 	for _, v := range mx.Data {
 		assert.Equal(t, float32(1), v)
 	}
+	assert.Equal(t, "[1, 1][1, 1]", mx.String())
+}
+
+func TestSub(t *testing.T) {
+	mx1 := NewMatrix(2, 2, []float32{2, 3, 4, 5})
+	mx2 := NewMatrix(2, 2, []float32{1, 2, 3, 4})
+
+	Sub(mx1.Data, mx2.Data)
+	assert.Equal(t, []float32{1, 1, 1, 1}, mx1.Data)
 }

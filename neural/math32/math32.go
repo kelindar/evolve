@@ -4,6 +4,7 @@
 package math32
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -102,6 +103,14 @@ func Mul(dst, src []float32) {
 	simd.MulFloat32s(dst, dst, src)
 }
 
+func Sub(dst, src []float32) {
+	if len(dst) != len(src) {
+		panic(fmt.Errorf("math32: subtract of different sizes (%d, %d)", len(dst), len(src)))
+	}
+
+	simd.SubFloat32s(dst, dst, src)
+}
+
 // ---------------------------------- Activations ----------------------------------
 
 func Sigmoid(x []float32) {
@@ -163,6 +172,29 @@ func NewMatrix(r, c int, data []float32) Matrix {
 	}
 }
 
+// String returns a string representation of the matrix
+func (mx *Matrix) String() string {
+	if mx == nil {
+		return "nil"
+	}
+
+	var buf bytes.Buffer
+	for i := 0; i < mx.Rows; i++ {
+		buf.WriteString("[")
+		for j := 0; j < mx.Cols; j++ {
+			buf.WriteString(fmt.Sprintf("%g", mx.Data[i*mx.Cols+j]))
+			if j < mx.Cols-1 {
+				buf.WriteString(", ")
+			}
+		}
+		buf.WriteString("]")
+		if i < mx.Rows-1 {
+			buf.WriteString("")
+		}
+	}
+	return buf.String()
+}
+
 // NewMatrixRandom creates a new dense matrix with randomly initialized values
 func NewMatrixRandom(r, c int) Matrix {
 	return NewMatrix(r, c, randArr(r*c, float64(c)))
@@ -196,6 +228,13 @@ func (m *Matrix) Reset(rows, cols int) {
 // Zero zeroes the matrix data, but does not change its shape
 func (m *Matrix) Zero() {
 	Clear(m.Data)
+}
+
+// Ones sets the matrix data to 1, but does not change its shape
+func (m *Matrix) Ones() {
+	for i := range m.Data {
+		m.Data[i] = 1
+	}
 }
 
 // randomly generate a float64 array

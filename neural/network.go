@@ -41,7 +41,7 @@ func NewNetwork(shape []int, weights ...[]float32) *Network {
 	// Create weight matrices for each prev
 	prev := nn.sensorSize
 	for _, hidden := range shape[1:] {
-		nn.layers = append(nn.layers, layer.NewFFN(prev, hidden))
+		nn.layers = append(nn.layers, layer.NewMGU(prev, hidden))
 		prev = hidden
 	}
 

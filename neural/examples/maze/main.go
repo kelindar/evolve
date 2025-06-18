@@ -15,7 +15,7 @@ import (
 	"github.com/kelindar/evolve/neural"
 )
 
-const epoch = 20
+const epoch = 100
 
 var seed atomic.Int64
 
@@ -135,6 +135,11 @@ func createMaze(seed int) *maze.Maze {
 
 // sense goes through all neighbors and sets to 1 if the path is available
 func sense(m *maze.Maze, vector []float32) (score []float32) {
+	// Clear previous sensor readings
+	for i := range vector {
+		vector[i] = 0.0
+	}
+
 	for i, direction := range maze.Directions {
 		point := m.Cursor
 		next := point.Advance(direction)
